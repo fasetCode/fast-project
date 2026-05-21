@@ -1,0 +1,5 @@
+packages:
+  - 'apps/*'            # 包含所有应用
+  - 'packages/*'        # 包含所有共享包
+  - 'doc'               # 文档站点（VitePress）
+  - '!**/__tests__'     # 排除所有测试目录

@@ -1,0 +1,70 @@
+
+logging:
+  level:
+    com.fastproject.jpa.sql: info
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      enabled: true
+  #  jackson:
+  #    json:
+  #      write:
+  #        write-numbers-as-strings: true
+  threads:
+    virtual:
+      enabled: true
+  jmx:
+    enabled: false
+  datasource:
+
+    #    hikari:
+    #      jdbc-url: jdbc:postgresql://127.0.0.1:5432/xm-middleground
+    #      username: postgres
+    #      password: root
+    #      driver-class-name: org.postgresql.Driver
+
+    url: jdbc:postgresql://127.0.0.1:5432/fast-project
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update  # none 已经有表，不要自动建表
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        implicitly_quoted_identifiers: false
+        use_sql_comments: false
+    #        generate_statistics: true
+    open-in-view: false
+security:
+  cache-key: 'auth:token:' # 缓存key
+  device: 0
+  token-key: 'Authorization'
+  expire: 10080 # 7 天
+
+
+
+fastproject:
+  tenant:
+    enabled: false # 租户功能默认关闭，按需开启
+  jpa:
+    sql-timing:
+      enabled: true
+      threshold-ms: 0
+  ratelimit:
+    app-code: admin
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: '123456'
+    database: 12
+    timeout: 2000
+    pool:
+      max-total: 200
+      max-idle: 50
+      min-idle: 10

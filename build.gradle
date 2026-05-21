@@ -1,0 +1,533 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.3' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'org.graalvm.buildtools.native' version '0.11.5' apply false
+}
+allprojects {
+    group = 'com.fastproject'
+    version = '0.0.1'
+    repositories {
+        mavenCentral()
+    }
+}
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.0.3"
+        }
+    }
+
+    dependencies {
+        implementation 'org.slf4j:slf4j-api:2.0.17'
+        // 公共依赖可以写在这里
+        compileOnly 'org.projectlombok:lombok:1.18.44'
+        annotationProcessor 'org.projectlombok:lombok:1.18.44'
+    }
+    java {
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
+    }
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+def libraryModules = [
+        ':common',
+        ':utils',
+        ':file-api',
+        ':file-module',
+        ':logs-api',
+        ':logs-module',
+        ':idempotent-api',
+        ':idempotent-module',
+        ':ratelimit-api',
+        ':ratelimit-module',
+        ':system-module'
+]
+
+libraryModules.each { moduleName ->
+    project(moduleName) {
+        buildDir = "${rootDir}/.module-build/${project.name}"
+    }
+}
+
+// 公共模块
+project(':common'){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+
+        implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20260313.1'
+
+        implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation project(":utils")
+        implementation 'org.hibernate.orm:hibernate-core:7.2.4.Final'
+    }
+}
+
+// 工具
+project(':utils'){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.bouncycastle:bcprov-jdk18on:1.78'
+
+        implementation 'org.springframework.boot:spring-boot-starter-json'
+    }
+}
+
+// 后台api
+project(':run-admin'){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.postgresql:postgresql:42.7.10'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        // Jackson JSR310 支持
+        implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+        // redis
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+
+        implementation 'redis.clients:jedis:7.4.0'
+
+        // 安全
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+        implementation project(":utils")
+        implementation project(":common")
+        // 系统
+        implementation project(':system-module')
+        // 文件
+        implementation project(":file-module")
+        implementation project(":file-api")
+        // 日志
+        implementation project(":logs-module")
+        implementation project(":logs-api")
+        // 幕等
+        implementation project(":idempotent-module")
+        implementation project(":idempotent-api")
+        // 限流
+        implementation project(":ratelimit-module")
+        implementation project(":ratelimit-api")
+        // 消息
+        implementation project(":message-module")
+        // 积分 权益
+        implementation project(":user-growth-module")
+        implementation project(":user-growth-api")
+
+        // 页面配置
+        implementation project(":page-module")
+
+        // 商城
+        implementation project(":mall-module")
+    }
+}
+
+
+project(":run-web"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.postgresql:postgresql:42.7.10'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        // Jackson JSR310 支持
+        implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+        // redis
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+
+        implementation 'redis.clients:jedis:7.4.0'
+
+        // 安全
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+        implementation project(":utils")
+        implementation project(":common")
+        // 系统
+        implementation project(':system-module')
+        // 文件
+        implementation project(":file-module")
+        implementation project(":file-api")
+        // 日志
+        implementation project(":logs-module")
+        implementation project(":logs-api")
+        // 幕等
+        implementation project(":idempotent-module")
+        implementation project(":idempotent-api")
+        // 限流
+        implementation project(":ratelimit-module")
+        implementation project(":ratelimit-api")
+        // 消息
+        implementation project(":message-module")
+        // 积分 权益
+        implementation project(":user-growth-module")
+        implementation project(":user-growth-api")
+
+        // 页面配置
+        implementation project(":page-module")
+    }
+}
+
+// 商城
+project(":mall-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        // Servlet API
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+        implementation project(":mall-api")
+    }
+}
+project(":mall-api"){
+
+}
+
+project(":page-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        // Servlet API
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+        implementation project(":page-api")
+    }
+}
+project(":page-api"){
+
+}
+
+// 幕等模块
+project(":idempotent-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        // Servlet API
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+        implementation project(":idempotent-api")
+    }
+}
+//
+project(":idempotent-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation project(':common')
+        implementation("org.springframework:spring-aop")
+        implementation("org.aspectj:aspectjweaver")
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    }
+}
+
+// 限流模块
+project(":ratelimit-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        // Servlet API
+//        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":ratelimit-api")
+    }
+}
+
+// 限流api
+project(":ratelimit-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation project(':common')
+        implementation("org.springframework:spring-aop")
+        implementation("org.aspectj:aspectjweaver")
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    }
+}
+
+// 消息
+project(":message-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+//邮箱
+        implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+        // Servlet API
+//        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":message-api")
+    }
+}
+project(":message-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+
+    }
+}
+
+// 积分权益模块
+project(":user-growth-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":user-growth-api")
+        implementation project(":file-api")
+    }
+}
+project(":user-growth-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+
+    }
+}
+
+
+
+
+//服务器工作节点
+project(":server-work"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'com.github.oshi:oshi-core:6.10.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation project(":utils")
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'com.h2database:h2:2.4.240'
+    }
+}
+
+// 系统模块
+project(':system-module'){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+
+    }
+}
+
+// 日志模块
+project(":logs-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+        implementation project(":logs-api")
+
+    }
+}
+
+// 日志api
+project(":logs-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+
+        implementation project(':common')
+
+        implementation("org.springframework:spring-aop")
+        implementation("org.aspectj:aspectjweaver")
+
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+    }
+}
+
+// 文件模块
+project(":file-module"){
+
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        implementation 'com.aliyun:alibabacloud-oss-v2:0.3.2'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+
+    }
+}
+
+// 文件api
+project(":file-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+
+    }
+}
+
+// websocket
+project(":websocket"){
+
+    group = 'com.fastproject'
+    version = '0.0.1'
+
+    dependencies {
+        implementation 'io.netty:netty-all:4.2.12.Final'
+        implementation 'org.springframework.boot:spring-boot-starter'
+
+        implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+        implementation 'com.alibaba.fastjson2:fastjson2:2.0.52'
+        implementation project(":utils")
+        implementation 'com.h2database:h2:2.4.240'
+    }
+}
+
+
+
+// 客户端插件
+project(":run-customer-plugin"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.postgresql:postgresql:42.7.10'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        // redis
+        implementation 'com.github.ben-manes.caffeine:caffeine:3.2.3'
+        implementation 'com.alibaba.fastjson2:fastjson2:2.0.52'
+
+//        implementation 'redis.clients:jedis:7.4.0'
+
+        // 安全
+//        implementation 'org.springframework.boot:spring-boot-starter-security'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+        implementation project(":utils")
+        implementation project(":common")
+
+    }
+}

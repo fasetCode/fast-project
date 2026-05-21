@@ -1,0 +1,21 @@
+plugins {
+    id 'java-library'
+    id 'org.hibernate.orm' version '7.2.4.Final'
+}
+
+// Native build support
+hibernate {
+    enhancement {
+        enableLazyInitialization = true
+        enableDirtyTracking = true
+        enableAssociationManagement = true
+    }
+}
+
+// Compile options
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
+}
+tasks.withType(JavaExec).configureEach {
+    jvmArgs = ['-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005']
+}

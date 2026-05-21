@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理端登录 - FastProject WS</title>
+    <script src="/vue/vue.global.js"></script>
+    <script src="/vue/axios.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --danger-bg: #fee2e2;
+            --danger-text: #dc2626;
+            --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [v-cloak] { display: none; }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; }
+        
+        .auth-container { width: 100%; max-width: 28rem; padding: 0 1.5rem; }
+        .auth-header { text-align: center; margin-bottom: 2rem; }
+        .auth-header svg { width: 3rem; height: 3rem; color: var(--primary); margin-bottom: 1rem; }
+        .auth-header p { color: var(--text-muted); font-size: 1.125rem; font-weight: 500; }
+
+        .card { background: var(--card-bg); border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border-color); padding: 2rem; margin-bottom: 2rem; }
+        
+        .alert-danger { background-color: var(--danger-bg); color: var(--danger-text); padding: 0.75rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem; font-weight: 500; }
+        .alert-danger svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+        .form-group label { font-size: 0.875rem; font-weight: 500; color: var(--text-main); }
+        
+        .input-group { position: relative; display: flex; align-items: center; }
+        .input-icon { position: absolute; left: 0.75rem; color: var(--text-muted); display: flex; align-items: center; }
+        .input-icon svg { width: 1.25rem; height: 1.25rem; }
+        .form-control { padding: 0.625rem 0.75rem 0.625rem 2.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem; font-family: inherit; transition: all 0.2s; width: 100%; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 0.375rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; width: 100%; margin-top: 0.5rem; }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+
+        .footer-info { text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+        
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="auth-container" v-cloak>
+        <!-- Logo -->
+        <div class="auth-header">
+            <div>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <p>请登录您的管理员账号</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="card">
+            
+            <div class="alert-danger" v-if="error">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>{{ error }}</span>
+            </div>
+
+            <form @submit.prevent="handleLogin">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <input type="text" class="form-control" id="username" v-model="form.username" placeholder="请输入管理员账号" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <input type="password" class="form-control" id="password" v-model="form.password" placeholder="请输入密码" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" :disabled="loading">
+                    <svg v-if="loading" class="spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 1.25rem; height: 1.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>{{ loading ? '正在登录...' : '立即登录' }}</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer Info -->
+        <p class="footer-info">
+            &copy; 2024 FastProject WebSocket Admin
+        </p>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        createApp({
+            setup() {
+                const form = reactive({
+                    username: '',
+                    password: ''
+                });
+                const error = ref('');
+                const loading = ref(false);
+
+                const handleLogin = async () => {
+                    loading.value = true;
+                    error.value = '';
+                    try {
+                        const params = new URLSearchParams();
+                        params.append('username', form.username);
+                        params.append('password', form.password);
+                        
+                        const response = await axios.post('/login', params);
+                        if (response.data.code === 200) {
+                            window.location.href = '/';
+                        } else {
+                            error.value = response.data.msg || '登录失败';
+                        }
+                    } catch (err) {
+                        error.value = '网络错误，请稍后再试';
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                return { form, error, loading, handleLogin };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 管理端</title> 
+    <script src="/vue/vue.global.js"></script>
+    <script src="/vue/axios.min.js"></script>
+    <style>
+        /* Reset & Base */
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-bg: #dcfce7;
+            --success-text: #16a34a;
+            --danger-bg: #fee2e2;
+            --danger-text: #dc2626;
+            --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        [v-cloak] { display: none; }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; }
+        a { text-decoration: none; color: inherit; }
+        
+        /* Layout */
+        .navbar { background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; height: 4rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { display: flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: bold; font-size: 1.25rem; }
+        .nav-brand svg { width: 2rem; height: 2rem; }
+        .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        .user-profile { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+        .user-avatar { width: 2rem; height: 2rem; background-color: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .user-avatar svg { width: 1.25rem; height: 1.25rem; }
+        .logout-btn { display: flex; align-items: center; gap: 0.25rem; color: var(--text-muted); transition: color 0.2s; }
+        .logout-btn:hover { color: var(--danger-text); }
+        .logout-btn svg { width: 1.25rem; height: 1.25rem; }
+
+        .main-container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+
+        /* Header */
+        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; }
+        .page-title h1 { font-size: 1.875rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .page-title p { color: var(--text-muted); }
+        .stat-card { background: var(--card-bg); padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: right; border: 1px solid var(--border-color); }
+        .stat-card p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .stat-value span:last-child { font-size: 1rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem; }
+
+        /* Cards */
+        .card { background: var(--card-bg); border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; border: 1px solid var(--border-color); overflow: hidden; }
+        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; }
+        .card-title { display: flex; align-items: center; gap: 0.75rem; font-size: 1.125rem; font-weight: 600; }
+        .card-title svg { width: 1.5rem; height: 1.5rem; color: var(--primary); }
+        .card-badge { background: var(--bg-color); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); border: 1px solid var(--border-color); }
+        .card-body { padding: 1.5rem; }
+
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group label { font-size: 0.875rem; font-weight: 500; color: var(--text-main); }
+        .form-control { padding: 0.625rem 0.75rem; border: 1px solid var(--border-color); border-radius: 0.375rem; font-size: 0.875rem; font-family: inherit; transition: all 0.2s; width: 100%; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .form-actions { display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 0.375rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; border: none; }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn-danger { background-color: var(--danger-bg); color: var(--danger-text); padding: 0.5rem; }
+        .btn-danger:hover { background-color: #fecaca; }
+        .btn-icon { background: transparent; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 0.375rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s; display: inline-flex; }
+        .btn-icon:hover { background: var(--bg-color); color: var(--text-main); }
+        .btn svg, .btn-icon svg { width: 1.25rem; height: 1.25rem; }
+        
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Tables */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background-color: #f8fafc; padding: 0.75rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
+        td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); vertical-align: top; font-size: 0.875rem; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f9fafb; }
+        
+        .td-content { display: flex; flex-direction: column; gap: 0.5rem; }
+        .info-item { display: flex; align-items: center; gap: 0.5rem; }
+        .info-item svg { width: 1rem; height: 1rem; color: var(--text-muted); flex-shrink: 0; }
+        .info-item span { color: var(--text-main); font-weight: 500; word-break: break-all;}
+        .info-item code { background: var(--bg-color); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.75rem; color: var(--primary); border: 1px solid var(--border-color); }
+        
+        .endpoint-item { display: flex; align-items: flex-start; gap: 0.5rem; }
+        .endpoint-item svg { width: 1rem; height: 1rem; color: var(--text-muted); margin-top: 0.125rem; flex-shrink: 0; }
+        .endpoint-item span { color: var(--text-muted); font-size: 0.8125rem; word-break: break-all; }
+
+        .status-badge { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid transparent; }
+        .status-dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; }
+        .status-running { background-color: var(--success-bg); color: var(--success-text); border-color: #bbf7d0; }
+        .status-running .status-dot { background-color: #22c55e; }
+        .status-stopped { background-color: var(--danger-bg); color: var(--danger-text); border-color: #fecaca; }
+        .status-stopped .status-dot { background-color: #ef4444; }
+
+        .action-group { display: flex; gap: 0.5rem; }
+
+        .empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--text-muted); }
+        .empty-state svg { width: 3rem; height: 3rem; margin: 0 auto 1rem; color: #cbd5e1; }
+        .empty-state h4 { color: var(--text-main); font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+        /* Footer */
+        footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.875rem; border-top: 1px solid var(--border-color); margin-top: 2rem; }
+        footer .footer-content { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+        footer svg { width: 1.25rem; height: 1.25rem; color: var(--primary); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .stat-card { text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+            .stat-value { font-size: 1.25rem; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" v-cloak>
+        <!-- Modern Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span>WS Admin</span>
+                </div>
+                
+                <div class="nav-right">
+                    <div v-if="user" class="user-profile">
+                        <div class="user-avatar">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <span>{{ user.username }}</span>
+                    </div>
+                    <a href="/logout" class="logout-btn">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <span>退出</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-container">
+            
+            <!-- Page Header & Stats -->
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>控制台</h1>
+                    <p>监控并管理您的 WebSocket 实时应用生态</p>
+                </div>
+                
+                <div class="header-stats">
+                    <div class="stat-card">
+                        <p>活跃应用</p>
+                        <div class="stat-value">
+                            <span>{{ applications.length }}</span>
+                            <span>个</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Application Card -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <h3>部署新应用</h3>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <form @submit.prevent="handleCreate">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>应用名称</label>
+                                <input type="text" class="form-control" v-model="newApp.appName" placeholder="例如：我的即时通讯" required>
+                            </div>
+                            <div class="form-group">
+                                <label>App ID</label>
+                                <input type="text" class="form-control" v-model="newApp.appId" placeholder="不填则系统自动分配">
+                            </div>
+                            <div class="form-group">
+                                <label>App Secret</label>
+                                <input type="text" class="form-control" v-model="newApp.appSecret" placeholder="不填则系统自动分配">
+                            </div>
+                            <div class="form-group">
+                                <label>授权回调 URL</label>
+                                <input type="text" class="form-control" v-model="newApp.authCallback" placeholder="https://api.yourdomain.com/auth/callback">
+                            </div>
+                            <div class="form-group">
+                                <label>消息通知 URL</label>
+                                <input type="text" class="form-control" v-model="newApp.sendCallback" placeholder="https://api.yourdomain.com/msg/webhook">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" :disabled="creating">
+                                <svg v-if="!creating" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <svg v-else class="spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>{{ creating ? '正在部署...' : '创建应用' }}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Application List -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <h3>应用资产</h3>
+                    </div>
+                    <div class="card-badge">
+                        {{ applications.length }} TOTAL
+                    </div>
+                </div>
+
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>基础信息</th>
+                                    <th>安全凭证</th>
+                                    <th>回调端点</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="app in applications" :key="app.id">
+                                    <td>
+                                        <div class="td-content">
+                                            <div class="info-item">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                                <span>{{ app.appName }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="td-content">
+                                            <div class="info-item">
+                                                <span>ID</span>
+                                                <code>{{ app.appId }}</code>
+                                            </div>
+                                            <div class="info-item">
+                                                <span>KEY</span>
+                                                <code>{{ app.appSecret }}</code>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="td-content">
+                                            <div class="endpoint-item">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                                <span :title="app.authCallback">{{ app.authCallback || '未配置' }}</span>
+                                            </div>
+                                            <div class="endpoint-item">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                                <span :title="app.sendCallback">{{ app.sendCallback || '未配置' }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div :class="['status-badge', app.status == 1 ? 'status-running' : 'status-stopped']">
+                                            <span class="status-dot"></span>
+                                            {{ app.status == 1 ? 'Running' : 'Stopped' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-group">
+                                            <a :href="'/apps/edit/' + app.id" class="btn-icon">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                            </a>
+                                            <button @click="handleDelete(app)" class="btn-icon btn-danger">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Empty State -->
+                                <tr v-if="applications.length === 0">
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                            <h4>虚位以待</h4>
+                                            <p>开启您的第一个 WebSocket 实时应用之旅</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <p>&copy; 2024 FastProject WebSocket. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        createApp({
+            setup() {
+                const user = ref(null);
+                const applications = ref([]);
+                const creating = ref(false);
+                const newApp = reactive({
+                    appName: '',
+                    appId: '',
+                    appSecret: '',
+                    authCallback: '',
+                    sendCallback: ''
+                });
+
+                const fetchData = async () => {
+                    try {
+                        const [userRes, appsRes] = await Promise.all([
+                            axios.get('/api/session'),
+                            axios.get('/api/apps')
+                        ]);
+                        if (userRes.data.code === 200) user.value = userRes.data.data;
+                        if (appsRes.data.code === 200) applications.value = appsRes.data.data;
+                    } catch (err) {
+                        console.error('Failed to fetch data', err);
+                    }
+                };
+
+                const handleCreate = async () => {
+                    creating.value = true;
+                    try {
+                        const params = new URLSearchParams();
+                        Object.keys(newApp).forEach(key => {
+                            if (newApp[key]) params.append(key, newApp[key]);
+                        });
+                        
+                        const response = await axios.post('/apps/create', params);
+                        if (response.data.code === 200) {
+                            Object.keys(newApp).forEach(key => newApp[key] = '');
+                            await fetchData();
+                        } else {
+                            alert(response.data.msg || '创建失败');
+                        }
+                    } catch (err) {
+                        alert('网络错误，请稍后再试');
+                    } finally {
+                        creating.value = false;
+                    }
+                };
+
+                const handleDelete = async (app) => {
+                    if (!confirm(`确定要永久删除应用 "${app.appName}" 吗？此操作不可恢复。`)) return;
+                    try {
+                        const response = await axios.get('/apps/delete/' + app.id);
+                        if (response.data.code === 200) {
+                            await fetchData();
+                        } else {
+                            alert(response.data.msg || '删除失败');
+                        }
+                    } catch (err) {
+                        alert('网络错误，请稍后再试');
+                    }
+                };
+
+                onMounted(fetchData);
+
+                return { user, applications, newApp, creating, handleCreate, handleDelete };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

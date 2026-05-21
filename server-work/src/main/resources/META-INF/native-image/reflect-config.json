@@ -1,0 +1,71 @@
+[
+
+
+
+  {
+    "name": "java.util.ArrayList",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.LinkedList",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.HashMap",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.LinkedHashMap",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.HashSet",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.LinkedHashSet",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "java.util.Optional",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+
+
+  {
+    "name": "java.time.LocalDateTime",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.time.LocalDate",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.time.LocalTime",
+    "allDeclaredFields": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "com.fasterxml.jackson.databind.ObjectMapper",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.JsonNode",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  }
+]

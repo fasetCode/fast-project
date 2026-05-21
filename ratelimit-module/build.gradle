@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+    id 'org.hibernate.orm' version '7.2.4.Final'
+}
+
+// Native build support
+hibernate {
+    enhancement {
+        enableLazyInitialization = true
+        enableDirtyTracking = true
+        enableAssociationManagement = true
+    }
+}
+
+// Compile options
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
+}

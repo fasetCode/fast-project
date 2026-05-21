@@ -1,0 +1,5 @@
+server:
+  port: 1230
+spring:
+  profiles:
+    active: dev2

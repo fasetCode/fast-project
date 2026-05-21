@@ -1,0 +1,58 @@
+.gradle
+.module-build/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+.kotlin
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+/.idea/
+.idea/**
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+node_modules/
+pnpm-lock.yaml
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+/data/server-work.mv.db
+/data/server-work.trace.db
+/data/sm2_private.key
+/data/sm2_public.key
+/data/ws-gateway.mv.db
+.idea
+/fast-ui/doc/.vitepress/dist/
+/fast-ui/doc/.vitepress/cache/

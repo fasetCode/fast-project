@@ -1,0 +1,255 @@
+package com.fastproject.ratelimit.config;
+
+import com.fastproject.jedis.JedisTemplate;
+import com.fastproject.ratelimit.enums.LimitDimension;
+import com.fastproject.ratelimit.enums.RateLimitType;
+import com.fastproject.ratelimit.service.ApiRateLimitConfigService;
+import com.fastproject.ratelimit.service.RateLimitRecordService;
+import com.fastproject.ratelimit.vo.api.ApiRateLimitConfigVo;
+import com.fastproject.ratelimit.vo.record.RateLimitRecordCreate;
+import com.fastproject.utils.IpUtils;
+import com.fastproject.utils.SpringContextUtil;
+import com.fastproject.utils.TokenUtils;
+import com.fastproject.utils.utils.JsonUtils;
+import com.fastproject.utils.vo.ResultVo;
+import com.fastproject.vo.SecurityUserVo;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * API限流过滤器 - 采用漏桶算法 (Leaky Bucket)
+ */
+@Component
+@Order(95000) // 在 IP 限流之后，全局限流之前执行
+@RequiredArgsConstructor
+@Slf4j
+public class ApiLimitFilter implements Filter {
+
+    private static final String API_CONFIG_CACHE_PREFIX = "api_rate_limit_config:";
+    private static final String REDIS_API_LEAKY_BUCKET_PREFIX = "ratelimit:api:leaky_bucket:";
+    private static final int BATCH_TOKEN_SIZE = 3;
+
+    // 使用 Caffeine 缓存 API 配置，过期时间 10 秒
+    private final Cache<String, Optional<ApiRateLimitConfigVo>> configCache = Caffeine.newBuilder()
+            .expireAfterWrite(10, TimeUnit.SECONDS)
+            .maximumSize(10000)
+            .build();
+
+    // 本地令牌缓存，减少 Redis 请求频率
+    private final Cache<String, Integer> tokenCache = Caffeine.newBuilder()
+            .expireAfterWrite(2, TimeUnit.SECONDS)
+            .maximumSize(100000)
+            .build();
+
+    private final RateLimitProps rateLimitProps;
+
+    // 漏桶算法 Lua 脚本 (与 IpLimitFilter 保持一致)
+    private static final String LEAKY_BUCKET_LUA_SCRIPT =
+            "local key = KEYS[1]\n" +
+            "local capacity = tonumber(ARGV[1])\n" +
+            "local leak_rate = tonumber(ARGV[2])\n" +
+            "local now = tonumber(ARGV[3])\n" +
+            "local requested = tonumber(ARGV[4])\n" +
+            "local bucket = redis.call('HMGET', key, 'water', 'last_time')\n" +
+            "local water = tonumber(bucket[1]) or 0\n" +
+            "local last_time = tonumber(bucket[2]) or now\n" +
+            "local delta_time = math.max(0, now - last_time)\n" +
+            "local leaked = delta_time * leak_rate / 1000.0\n" +
+            "water = math.max(0, water - leaked)\n" +
+            "if water + requested <= capacity then\n" +
+            "    water = water + requested\n" +
+            "    redis.call('HMSET', key, 'water', water, 'last_time', now)\n" +
+            "    redis.call('EXPIRE', key, math.ceil(capacity / leak_rate) + 60)\n" +
+            "    return 1\n" +
+            "else\n" +
+            "    redis.call('HMSET', key, 'water', water, 'last_time', now)\n" +
+            "    return 0\n" +
+            "end";
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        String appCode = rateLimitProps.getAppCode();
+        String apiPath = httpRequest.getRequestURI();
+        String httpMethod = httpRequest.getMethod();
+
+        // 获取匹配的 API 配置
+        ApiRateLimitConfigVo config = getMatchingConfig(appCode, apiPath, httpMethod);
+
+        if (config != null && Boolean.TRUE.equals(config.getEnabled())) {
+            // 限流校验
+            if (!tryAcquire(appCode, apiPath, httpMethod, config, httpRequest)) {
+                handleReject(httpRequest, httpResponse, config, "ExAPI");
+                return;
+            }
+        }
+
+        chain.doFilter(request, response);
+    }
+
+    private ApiRateLimitConfigVo getMatchingConfig(String appCode, String apiPath, String httpMethod) {
+        String cacheKey = API_CONFIG_CACHE_PREFIX + appCode + ":" + httpMethod + ":" + apiPath;
+        Optional<ApiRateLimitConfigVo> configOpt = configCache.get(cacheKey, key -> {
+            ApiRateLimitConfigService service = SpringContextUtil.getBean(ApiRateLimitConfigService.class);
+            return Optional.ofNullable(service.findByAppCodeAndApiPathAndHttpMethod(appCode, apiPath, httpMethod));
+        });
+        return configOpt != null ? configOpt.orElse(null) : null;
+    }
+
+    private boolean tryAcquire(String appCode, String apiPath, String httpMethod, ApiRateLimitConfigVo config, HttpServletRequest request) {
+        String dimensionKey = getDimensionKey(config, request);
+        if (dimensionKey == null) {
+            return true; // 无法获取维度标识（如未登录的用户维度），默认放行或可根据业务调整
+        }
+
+        String redisKey = REDIS_API_LEAKY_BUCKET_PREFIX + appCode + ":" + httpMethod + ":" + apiPath + ":" + dimensionKey;
+        String localCacheKey = appCode + ":" + httpMethod + ":" + apiPath + ":" + dimensionKey;
+
+        // 1. 尝试从本地缓存获取令牌
+        AtomicBoolean localAcquired = new AtomicBoolean(false);
+        tokenCache.asMap().computeIfPresent(localCacheKey, (k, v) -> {
+            if (v > 0) {
+                localAcquired.set(true);
+                return v - 1;
+            }
+            return v;
+        });
+
+        if (localAcquired.get()) {
+            return true;
+        }
+
+        long maxRequests = config.getMaxRequests();
+        int timeWindow = config.getTimeWindow();
+        long burstCapacity = maxRequests; // API 限流暂不设独立的突发容量，默认等于最大请求数
+
+        // 漏水速率 (tokens per second)
+        double leakRate = (double) maxRequests / timeWindow;
+        long now = System.currentTimeMillis();
+
+        // 批量获取大小
+        int batchSize = Math.min(BATCH_TOKEN_SIZE, (int) burstCapacity);
+
+        try {
+            JedisTemplate jedisTemplate = SpringContextUtil.getBean(JedisTemplate.class);
+
+            // 2. 尝试批量获取
+            Object result = jedisTemplate.eval(
+                    LEAKY_BUCKET_LUA_SCRIPT,
+                    Collections.singletonList(redisKey),
+                    Arrays.asList(
+                            String.valueOf(burstCapacity),
+                            String.valueOf(leakRate),
+                            String.valueOf(now),
+                            String.valueOf(batchSize)
+                    )
+            );
+
+            if ("1".equals(String.valueOf(result))) {
+                if (batchSize > 1) {
+                    tokenCache.put(localCacheKey, batchSize - 1);
+                }
+                return true;
+            }
+
+            // 3. 批量获取失败，尝试只获取 1 个（保底逻辑）
+            if (batchSize > 1) {
+                result = jedisTemplate.eval(
+                        LEAKY_BUCKET_LUA_SCRIPT,
+                        Collections.singletonList(redisKey),
+                        Arrays.asList(
+                                String.valueOf(burstCapacity),
+                                String.valueOf(leakRate),
+                                String.valueOf(now),
+                                "1"
+                        )
+                );
+                return "1".equals(String.valueOf(result));
+            }
+
+            return false;
+        } catch (Exception e) {
+            log.error("执行API限流漏桶算法异常", e);
+            return true; // 异常降级放行
+        }
+    }
+
+    private String getDimensionKey(ApiRateLimitConfigVo config, HttpServletRequest request) {
+        LimitDimension dimension = config.getLimitDimension();
+        if (dimension == null) return "global";
+
+        switch (dimension) {
+            case IP:
+                return IpUtils.getIp(request);
+            case USER:
+                TokenUtils tokenUtils = SpringContextUtil.getBean(TokenUtils.class);
+                SecurityUserVo user = tokenUtils.getUser();
+                return user != null ? String.valueOf(user.getUserId()) : null;
+            case GLOBAL:
+            default:
+                return "global";
+        }
+    }
+
+    private void handleReject(HttpServletRequest request, HttpServletResponse response, ApiRateLimitConfigVo config, String reason) throws IOException {
+        log.warn("API限流触发：Path={}, Method={}, 原因={}", config.getApiPath(), config.getHttpMethod(), reason);
+        logLimitRecord(request, config, reason);
+        
+        response.setStatus(429);
+        response.setContentType("application/json;charset=utf-8");
+        ResultVo<Object> failResult = ResultVo.fail(429, reason + "，请稍候再试");
+        response.getWriter().write(JsonUtils.toJson(failResult));
+    }
+
+    private void logLimitRecord(HttpServletRequest request, ApiRateLimitConfigVo config, String reason) {
+        try {
+            RateLimitRecordService recordService = SpringContextUtil.getBean(RateLimitRecordService.class);
+            TokenUtils tokenUtils = SpringContextUtil.getBean(TokenUtils.class);
+            SecurityUserVo user = tokenUtils.getUser();
+
+            RateLimitRecordCreate create = new RateLimitRecordCreate();
+            create.setAppCode(rateLimitProps.getAppCode());
+            create.setLimitKey("api_limit:" + config.getHttpMethod() + ":" + config.getApiPath());
+            create.setLimitType(RateLimitType.API);
+            create.setTargetValue(getDimensionKey(config, request));
+            create.setMethod(request.getMethod());
+            create.setUrl(request.getRequestURI());
+            create.setIp(IpUtils.getIp(request));
+            if (user != null) {
+                create.setUserId(user.getUserId());
+            }
+
+            // Headers
+            Map<String, String> headers = new HashMap<>();
+            Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames != null && headerNames.hasMoreElements()) {
+                String name = headerNames.nextElement();
+                headers.put(name, request.getHeader(name));
+            }
+            create.setHeaders(JsonUtils.toJson(headers));
+            create.setQueryParams(request.getQueryString());
+
+            String limitReason = reason + " (配置: " + config.getMaxRequests() + "/" + config.getTimeWindow() + "s, 维度: " + config.getLimitDimension() + ")";
+            create.setLimitReason(limitReason);
+
+            recordService.save(create);
+        } catch (Exception e) {
+            log.error("记录API限流日志失败", e);
+        }
+    }
+}

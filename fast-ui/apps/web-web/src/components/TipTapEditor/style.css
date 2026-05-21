@@ -1,0 +1,305 @@
+/* RichEditor 富文本内容展示样式 */
+/* 用于在页面中展示富文本编辑器生成的内容 - 与编辑器内部样式保持一致 */
+
+.rich-content {
+  line-height: 1.6;
+  color: #333;
+  font-size: 14px;
+}
+
+.rich-content p {
+  margin: 0 0 8px 0;
+}
+
+.rich-content h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.rich-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.rich-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.rich-content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.rich-content h5,
+.rich-content h6 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.rich-content ul,
+.rich-content ol {
+  padding-left: 20px;
+  margin: 0 0 8px 0;
+}
+
+.rich-content ul {
+  list-style-type: disc;
+}
+
+.rich-content ol {
+  list-style-type: decimal;
+}
+
+.rich-content li {
+  margin: 4px 0;
+}
+
+.rich-content li > p {
+  margin: 0;
+}
+
+.rich-content blockquote {
+  border-left: 3px solid #d9d9d9;
+  padding-left: 12px;
+  margin: 0 0 8px 0;
+  color: #666;
+}
+
+.rich-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content pre {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0 0 8px 0;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rich-content code {
+  background: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.rich-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 8px 0;
+}
+
+.rich-content a {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #409eff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+  text-align: center;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* 默认宽度（当没有自定义宽度时） */
+.rich-content a:not([style*="width"]) {
+  width: 100%;
+}
+
+.rich-content a:hover {
+  background-color: #66b1ff;
+}
+
+.rich-content a:active {
+  background-color: #3a8ee6;
+}
+
+.rich-content a[target="_blank"]::after {
+  content: ' ↗';
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+/* 链接悬浮提示 - 展示页面 */
+.rich-content a[href]:hover::before {
+  content: attr(href);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 100;
+  margin-bottom: 4px;
+  pointer-events: none;
+}
+
+.rich-content a[href]:hover::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  margin-bottom: -4px;
+  pointer-events: none;
+}
+
+.rich-content strong,
+.rich-content b {
+  font-weight: 600;
+}
+
+.rich-content em,
+.rich-content i {
+  font-style: italic;
+}
+
+.rich-content u {
+  text-decoration: underline;
+}
+
+.rich-content s,
+.rich-content strike,
+.rich-content del {
+  text-decoration: line-through;
+}
+
+/* 字体大小样式 */
+.rich-content span[style*="font-size"] {
+  display: inline;
+}
+
+/* 文字对齐样式 - TipTap使用data-text-align属性 */
+.rich-content p[data-text-align="center"],
+.rich-content h1[data-text-align="center"],
+.rich-content h2[data-text-align="center"],
+.rich-content h3[data-text-align="center"],
+.rich-content h4[data-text-align="center"] {
+  text-align: center;
+}
+
+.rich-content p[data-text-align="right"],
+.rich-content h1[data-text-align="right"],
+.rich-content h2[data-text-align="right"],
+.rich-content h3[data-text-align="right"],
+.rich-content h4[data-text-align="right"] {
+  text-align: right;
+}
+
+.rich-content p[data-text-align="left"],
+.rich-content h1[data-text-align="left"],
+.rich-content h2[data-text-align="left"],
+.rich-content h3[data-text-align="left"],
+.rich-content h4[data-text-align="left"] {
+  text-align: left;
+}
+
+.rich-content p[data-text-align="justify"],
+.rich-content h1[data-text-align="justify"],
+.rich-content h2[data-text-align="justify"],
+.rich-content h3[data-text-align="justify"],
+.rich-content h4[data-text-align="justify"] {
+  text-align: justify;
+}
+
+/* 表格样式 - 与编辑器一致 */
+.rich-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.rich-content th,
+.rich-content td {
+  border: 1px solid #d9d9d9;
+  padding: 8px 12px;
+  vertical-align: top;
+  min-width: 60px;
+}
+
+.rich-content th {
+  background: #f5f5f5;
+  font-weight: 600;
+  text-align: left;
+}
+
+.rich-content td p,
+.rich-content th p {
+  margin: 0;
+}
+
+/* 水平线 */
+.rich-content hr {
+  border: none;
+  border-top: 1px solid #d9d9d9;
+  margin: 16px 0;
+}
+
+/* 选中状态 */
+.rich-content ::selection {
+  background: #bae7ff;
+  color: inherit;
+}
+
+/* 水平线 */
+.rich-content hr {
+  border: none;
+  border-top: 1px solid #d9d9d9;
+  margin: 16px 0;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .rich-content {
+    font-size: 14px;
+  }
+
+  .rich-content h1 {
+    font-size: 20px;
+  }
+
+  .rich-content h2 {
+    font-size: 18px;
+  }
+
+  .rich-content h3 {
+    font-size: 16px;
+  }
+
+  .rich-content ul,
+  .rich-content ol {
+    padding-left: 16px;
+  }
+
+  .rich-content th,
+  .rich-content td {
+    padding: 6px 8px;
+  }
+}

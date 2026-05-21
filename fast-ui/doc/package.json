@@ -1,0 +1,15 @@
+{
+  "name": "fast-docs",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev . --host",
+    "build": "vitepress build .",
+    "preview": "vitepress preview . --host"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  }
+}

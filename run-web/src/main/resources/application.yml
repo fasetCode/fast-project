@@ -1,0 +1,5 @@
+server:
+  port: 2345
+spring:
+  profiles:
+    active: dev2
