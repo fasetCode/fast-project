@@ -4,6 +4,7 @@
 
 关键词：后台管理系统、管理后台、后台管理平台、Admin、Spring Boot、Vue 3、RBAC、权限管理、用户角色菜单、Java 企业级后台、前后端分离脚手架、多模块架构、pnpm workspace、Gradle 多模块。
 
+文档地址：http://123.57.211.81/
 ## 技术栈
 
 ### 后端
