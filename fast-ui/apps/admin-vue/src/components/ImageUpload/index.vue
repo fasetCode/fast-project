@@ -50,6 +50,17 @@ const previewVisible = ref(false)
 const previewImage = ref('')
 const previewTitle = ref('')
 
+const toIdString = (value: any): string => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'bigint') return String(value)
+  if (typeof value === 'object' && typeof value.toString === 'function') {
+    const s = value.toString()
+    if (s && s !== '[object Object]') return s
+  }
+  return String(value)
+}
+
 // 同步初始值
 const syncValueToFileList = () => {
   if (!props.modelValue) {
@@ -60,7 +71,7 @@ const syncValueToFileList = () => {
   const values = Array.isArray(props.modelValue) ? props.modelValue : [props.modelValue]
   
   fileList.value = values.map((val, index) => {
-    const valueStr = String(val)
+    const valueStr = props.valueType === 'id' ? toIdString(val) : String(val)
     // 判断是否是 URL 地址
     const isUrl = valueStr.startsWith('http') || valueStr.startsWith('/') || valueStr.includes('/')
     
@@ -90,7 +101,7 @@ watch(() => props.modelValue, () => {
     .filter(f => f.status === 'done')
     .map(f => {
       if (props.valueType === 'id') {
-        return f.response?.data?.fileId || f.uid
+        return toIdString(f.response?.data?.fileId || f.uid)
       }
       return f.url || f.response?.data?.accessPath
     })
@@ -160,7 +171,7 @@ const updateModelValue = () => {
     .map(f => {
       const resData = f.response?.data
       if (props.valueType === 'id') {
-        return resData?.fileId || f.url
+        return toIdString(resData?.fileId || f.url)
       }
       return resData?.accessPath || f.url
     })

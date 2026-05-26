@@ -50,6 +50,18 @@
             <template v-if="column.key === 'status'">
               <a-tag :color="record.status === 1 ? 'green' : 'red'">{{ getDictLabel('status', record.status) }}</a-tag>
             </template>
+            <template v-else-if="column.key === 'color'">
+              <a-tag v-if="record.color" :color="record.color">{{ record.color }}</a-tag>
+              <span v-else class="text-secondary">-</span>
+            </template>
+            <template v-else-if="column.key === 'image'">
+              <a-image v-if="record.image" :src="resolveImage(record.image)" :width="40" :height="40" />
+              <span v-else class="text-secondary">-</span>
+            </template>
+            <template v-else-if="column.key === 'icon'">
+              <a-image v-if="record.icon" :src="resolveImage(record.icon)" :width="40" :height="40" />
+              <span v-else class="text-secondary">-</span>
+            </template>
             <template v-else-if="column.key === 'displayType'">
               <a-tag color="blue">{{ getDictLabel('content_tag_display_type', record.displayType) }}</a-tag>
             </template>
@@ -66,9 +78,20 @@
       <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
         <a-row :gutter="16">
           <a-col :span="12"><a-form-item label="标签名称" name="name"><a-input v-model:value="formData.name" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="颜色" name="color"><a-input v-model:value="formData.color" placeholder="#1890ff 或 red" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="图标" name="icon"><a-input v-model:value="formData.icon" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="图片" name="image"><a-input v-model:value="formData.image" /></a-form-item></a-col>
+          <a-col :span="12">
+            <a-form-item label="颜色" name="color">
+              <a-input v-model:value="formData.color" placeholder="#1890ff 或 red">
+                <template #suffix>
+                  <span
+                    v-if="formData.color"
+                    :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '2px', border: '1px solid #d9d9d9', background: formData.color }"
+                  />
+                </template>
+              </a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :span="12"><a-form-item label="图标" name="icon"><ImageUpload v-model="formData.icon" value-type="id" :limit="1" /></a-form-item></a-col>
+          <a-col :span="12"><a-form-item label="图片" name="image"><ImageUpload v-model="formData.image" value-type="id" :limit="1" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="展示类型" name="displayType">
             <a-select v-model:value="formData.displayType" allow-clear>
               <a-select-option v-for="item in displayTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
@@ -94,6 +117,15 @@ import type { ContentTagVo, ContentTagQuery, ContentTagCreate, ContentTagUpdate 
 import { getContentTagPage, getContentTagById, createContentTag, updateContentTag, deleteContentTag, batchDeleteContentTag } from '@/api/content/contenttag'
 import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData, getDictLabel } from '@/utils/dict.ts'
+import ImageUpload from '@/components/ImageUpload/index.vue'
+import { getFileUrl } from '@/api/file/fileupload'
+
+const resolveImage = (val: any) => {
+  if (!val) return ''
+  const str = String(val)
+  if (str.startsWith('http') || str.startsWith('/')) return str
+  return getFileUrl(val)
+}
 
 const statusOptions = computed(() => (getDictData('status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
 const displayTypeOptions = computed(() => (getDictData('content_tag_display_type') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
@@ -102,6 +134,8 @@ const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
   { title: '名称', dataIndex: 'name', key: 'name', width: 180 },
   { title: '颜色', dataIndex: 'color', key: 'color', width: 120 },
+  { title: '图片', dataIndex: 'image', key: 'image', width: 90 },
+  { title: '图标', dataIndex: 'icon', key: 'icon', width: 90 },
   { title: '展示类型', dataIndex: 'displayType', key: 'displayType', width: 140 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
   { title: '操作', key: 'action', width: 160, fixed: 'right' as const, align: 'center' as const },
@@ -182,7 +216,11 @@ const handleEdit = async (record: ContentTagVo) => {
   isEdit.value = true
   const res: any = await getContentTagById(record.id!)
   if (res.code === 200) {
-    Object.assign(formData, res.data)
+    Object.assign(formData, {
+      ...res.data,
+      image: res.data?.image ? String(res.data.image) : '',
+      icon: res.data?.icon ? String(res.data.icon) : '',
+    })
   }
   modalVisible.value = true
 }
@@ -192,7 +230,11 @@ const handleSubmit = async () => {
     await formRef.value?.validate()
     submitLoading.value = true
     const reqId = getRequestId()
-    const payload = { ...formData }
+    const payload = {
+      ...formData,
+      image: formData.image ? String(formData.image) : '',
+      icon: formData.icon ? String(formData.icon) : '',
+    }
     const res: any = isEdit.value
       ? await updateContentTag(payload as ContentTagUpdate, reqId)
       : await createContentTag(payload, reqId)
@@ -253,4 +295,3 @@ onMounted(() => {
 <style scoped>
 @import '@/assets/styles/modern-dashboard.css';
 </style>
-
