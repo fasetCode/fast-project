@@ -133,8 +133,13 @@ project(':run-admin'){
 
         // 商城
         implementation project(":mall-module")
+
+        // 内容
+        implementation project(":content-module")
+
     }
 }
+
 
 
 project(":run-web"){
@@ -181,6 +186,38 @@ project(":run-web"){
     }
 }
 
+
+// 内容模块 用于 知识库 论坛 等公共模块
+project(":content-module"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.mapstruct:mapstruct:1.6.3'
+        annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        // Servlet API
+        compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+        // Redis
+        implementation 'redis.clients:jedis:7.4.0'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+
+        implementation project(':common')
+        implementation project(":utils")
+        implementation project(":file-api")
+        implementation project(":content-api")
+    }
+}
+// 内容模块 用于 知识库 论坛 等公共模块
+project(":content-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
+}
+
 // 商城
 project(":mall-module"){
     group = 'com.fastproject'
@@ -207,7 +244,8 @@ project(":mall-module"){
     }
 }
 project(":mall-api"){
-
+    group = 'com.fastproject'
+    version = '0.0.1'
 }
 
 project(":page-module"){
