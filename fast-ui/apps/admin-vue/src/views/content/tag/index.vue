@@ -80,14 +80,7 @@
           <a-col :span="12"><a-form-item label="标签名称" name="name"><a-input v-model:value="formData.name" /></a-form-item></a-col>
           <a-col :span="12">
             <a-form-item label="颜色" name="color">
-              <a-input v-model:value="formData.color" placeholder="#1890ff 或 red">
-                <template #suffix>
-                  <span
-                    v-if="formData.color"
-                    :style="{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '2px', border: '1px solid #d9d9d9', background: formData.color }"
-                  />
-                </template>
-              </a-input>
+              <ColorInput v-model:value="formData.color" placeholder="#1890ff 或 red" />
             </a-form-item>
           </a-col>
           <a-col :span="12"><a-form-item label="图标" name="icon"><ImageUpload v-model="formData.icon" value-type="id" :limit="1" /></a-form-item></a-col>
@@ -118,6 +111,7 @@ import { getContentTagPage, getContentTagById, createContentTag, updateContentTa
 import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData, getDictLabel } from '@/utils/dict.ts'
 import ImageUpload from '@/components/ImageUpload/index.vue'
+import ColorInput from '@/components/ColorInput/index.vue'
 import { getFileUrl } from '@/api/file/fileupload'
 
 const resolveImage = (val: any) => {
