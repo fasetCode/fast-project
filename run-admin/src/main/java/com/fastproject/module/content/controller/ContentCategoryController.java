@@ -55,12 +55,6 @@ public class ContentCategoryController {
         return ResultVo.success();
     }
 
-    @PostMapping("/page")
-    @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
-    public ResultVo<PageVo<List<ContentCategory>>> page(@RequestBody PageQuery query) {
-        return ResultVo.success(contentCategoryService.findPage(query));
-    }
-
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
     public ResultVo<ContentCategory> get(@PathVariable Long id) {
@@ -71,16 +65,5 @@ public class ContentCategoryController {
     @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
     public ResultVo<List<ContentCategory>> tree() {
         return ResultVo.success(contentCategoryService.findTree());
-    }
-
-    @GetMapping("/list")
-    @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
-    public ResultVo<List<ContentCategory>> list() {
-        return ResultVo.success(contentCategoryService.findAll());
-    }
-
-    @GetMapping("/selectAll")
-    public ResultVo<List<ContentCategory>> selectAll() {
-        return ResultVo.success(contentCategoryService.selectAll());
     }
 }

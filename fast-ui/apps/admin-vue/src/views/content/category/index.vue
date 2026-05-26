@@ -101,9 +101,7 @@ import { getDictData, getDictLabel } from '@/utils/dict.ts'
 const statusOptions = computed(() => (getDictData('status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
   { title: '分类名称', dataIndex: 'name', key: 'name', width: 200 },
-  { title: '父级ID', dataIndex: 'parentId', key: 'parentId', width: 110 },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 90 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
   { title: '操作', key: 'action', width: 160, fixed: 'right' as const, align: 'center' as const },
