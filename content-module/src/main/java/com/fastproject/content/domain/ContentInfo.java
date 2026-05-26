@@ -23,11 +23,6 @@ import java.time.LocalDateTime;
 public class ContentInfo extends BaseEntity {
 
     /**
-     * 内容类型（文章/帖子/知识库等，由业务自行约定）
-     */
-    private Integer type;
-
-    /**
      * 标题
      */
     @Column(length = 200)
