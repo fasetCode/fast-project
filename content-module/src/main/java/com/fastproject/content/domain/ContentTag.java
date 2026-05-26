@@ -33,6 +33,23 @@ public class ContentTag extends BaseEntity {
     private String color;
 
     /**
+     * 图标（可选，iconfont class / svg / url 等，由业务自行约定）
+     */
+    @Column(length = 500)
+    private String icon;
+
+    /**
+     * 图片（可选，用于“图片标签”展示）
+     */
+    @Column(length = 500)
+    private String image;
+
+    /**
+     * 展示类型（1文字，2图标+文字，3图片）
+     */
+    private Integer displayType;
+
+    /**
      * 状态（NORMAL/DISABLED 等，由业务自行约定）
      */
     private Integer status;
