@@ -1,7 +1,7 @@
 <template>
   <div class="mall-container">
     <div class="filter-bar">
-      <a-form :model="queryParams" class="elegant-form">
+      <a-form class="elegant-form">
         <div class="filter-grid">
           <div class="filter-actions">
             <a-button class="icon-btn refresh-btn" @click="reset()" shape="circle" :loading="loading">
@@ -20,7 +20,7 @@
       <div class="board-toolbar">
         <div class="toolbar-left">
           <div class="board-tabs">
-            <div class="tab active">分类列表 <span class="badge">{{ pagination.total }}</span></div>
+            <div class="tab active">分类列表 <span class="badge">{{ totalCount }}</span></div>
           </div>
         </div>
         <div class="toolbar-right">
@@ -38,12 +38,11 @@
           :columns="columns"
           :data-source="dataSource"
           :loading="loading"
-          :pagination="pagination"
+          :pagination="false"
           :row-selection="{ selectedRowKeys, onChange: onSelectChange }"
           row-key="id"
           size="middle"
           :scroll="{ x: 1000 }"
-          @change="handleTableChange"
           class="elegant-table"
         >
           <template #bodyCell="{ column, record }">
@@ -63,7 +62,19 @@
       <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
         <a-row :gutter="16">
           <a-col :span="12"><a-form-item label="分类名称" name="name"><a-input v-model:value="formData.name" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="父级ID" name="parentId"><a-input-number v-model:value="formData.parentId" :min="0" style="width:100%" /></a-form-item></a-col>
+          <a-col :span="12">
+            <a-form-item label="父级分类" name="parentId">
+              <a-tree-select
+                v-model:value="formData.parentId"
+                :tree-data="parentTreeData"
+                :field-names="{ label: 'title', value: 'value', children: 'children' }"
+                allow-clear
+                tree-default-expand-all
+                style="width:100%"
+                placeholder="请选择父级分类（不选为顶级）"
+              />
+            </a-form-item>
+          </a-col>
           <a-col :span="12"><a-form-item label="排序" name="sort"><a-input-number v-model:value="formData.sort" :min="0" style="width:100%" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="状态" name="status">
             <a-select v-model:value="formData.status">
@@ -82,8 +93,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue'
 import type { FormInstance } from 'ant-design-vue'
-import type { ContentCategoryVo, ContentCategoryQuery, ContentCategoryCreate, ContentCategoryUpdate } from '@/api/content/contentcategory'
-import { getContentCategoryPage, getContentCategoryById, createContentCategory, updateContentCategory, deleteContentCategory, batchDeleteContentCategory } from '@/api/content/contentcategory'
+import type { ContentCategoryTreeVo, ContentCategoryCreate, ContentCategoryUpdate } from '@/api/content/contentcategory'
+import { getContentCategoryTree, getContentCategoryById, createContentCategory, updateContentCategory, deleteContentCategory, batchDeleteContentCategory } from '@/api/content/contentcategory'
 import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData, getDictLabel } from '@/utils/dict.ts'
 
@@ -100,21 +111,8 @@ const columns = [
 
 const loading = ref(false)
 const submitLoading = ref(false)
-const dataSource = ref<ContentCategoryVo[]>([])
+const dataSource = ref<ContentCategoryTreeVo[]>([])
 const selectedRowKeys = ref<number[]>([])
-
-const queryParams = reactive<ContentCategoryQuery>({
-  page: 1,
-  pageSize: 10,
-})
-
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showTotal: (total: number) => `共 ${total} 条数据`,
-})
 
 const modalVisible = ref(false)
 const isEdit = ref(false)
@@ -123,7 +121,7 @@ type ContentCategoryFormData = ContentCategoryCreate & { id?: number }
 const formData = reactive<ContentCategoryFormData>({
   id: undefined,
   name: '',
-  parentId: undefined,
+  parentId: 0,
   sort: 0,
   status: 1,
   remark: '',
@@ -133,28 +131,44 @@ const rules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
 }
 
+const countTree = (nodes: ContentCategoryTreeVo[] | undefined): number => {
+  if (!nodes?.length) return 0
+  let count = 0
+  for (const n of nodes) {
+    count += 1 + countTree(n.children)
+  }
+  return count
+}
+
+const totalCount = computed(() => countTree(dataSource.value))
+
+type TreeSelectNode = { title: string; value: number; children?: TreeSelectNode[] }
+const buildTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): TreeSelectNode[] => {
+  if (!nodes?.length) return []
+  return nodes.map((n) => ({
+    title: n.name || `${n.id}`,
+    value: Number(n.id),
+    children: buildTreeSelect(n.children),
+  }))
+}
+
+const parentTreeData = computed<TreeSelectNode[]>(() => [
+  { title: '顶级分类', value: 0, children: buildTreeSelect(dataSource.value) },
+])
+
 const loadData = async () => {
   loading.value = true
   try {
-    const params: ContentCategoryQuery = { ...queryParams, page: pagination.current - 1, pageSize: pagination.pageSize }
-    const res: any = await getContentCategoryPage(params)
+    const res: any = await getContentCategoryTree()
     if (res.code === 200) {
-      dataSource.value = res.data?.data || []
-      pagination.total = res.data?.total || 0
+      dataSource.value = res.data || []
     }
   } finally {
     loading.value = false
   }
 }
 
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
-  loadData()
-}
-
 const reset = () => {
-  pagination.current = 1
   loadData()
 }
 
@@ -164,15 +178,15 @@ const onSelectChange = (keys: number[]) => {
 
 const handleAdd = () => {
   isEdit.value = false
-  Object.assign(formData, { id: undefined, name: '', parentId: undefined, sort: 0, status: 1, remark: '' })
+  Object.assign(formData, { id: undefined, name: '', parentId: 0, sort: 0, status: 1, remark: '' })
   modalVisible.value = true
 }
 
-const handleEdit = async (record: ContentCategoryVo) => {
+const handleEdit = async (record: ContentCategoryTreeVo) => {
   isEdit.value = true
   const res: any = await getContentCategoryById(record.id!)
   if (res.code === 200) {
-    Object.assign(formData, res.data)
+    Object.assign(formData, { ...res.data, parentId: res.data?.parentId ?? 0 })
   }
   modalVisible.value = true
 }
@@ -183,6 +197,7 @@ const handleSubmit = async () => {
     submitLoading.value = true
     const reqId = getRequestId()
     const payload = { ...formData }
+    if (payload.parentId === 0) payload.parentId = undefined
     const res: any = isEdit.value
       ? await updateContentCategory(payload as ContentCategoryUpdate, reqId)
       : await createContentCategory(payload, reqId)
@@ -243,4 +258,3 @@ onMounted(() => {
 <style scoped>
 @import '@/assets/styles/modern-dashboard.css';
 </style>
-

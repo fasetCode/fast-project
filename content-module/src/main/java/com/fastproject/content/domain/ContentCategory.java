@@ -4,10 +4,13 @@ import com.fastproject.db.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+
+import java.util.List;
 
 /**
  * 内容分类表
@@ -46,4 +49,7 @@ public class ContentCategory extends BaseEntity {
      */
     @Column(length = 500)
     private String remark;
+
+    @Transient
+    private List<ContentCategory> children;
 }

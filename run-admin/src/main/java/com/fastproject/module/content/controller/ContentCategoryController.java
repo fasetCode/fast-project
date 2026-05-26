@@ -67,6 +67,12 @@ public class ContentCategoryController {
         return ResultVo.success(contentCategoryService.findById(id));
     }
 
+    @GetMapping("/tree")
+    @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
+    public ResultVo<List<ContentCategory>> tree() {
+        return ResultVo.success(contentCategoryService.findTree());
+    }
+
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:category:page')")
     public ResultVo<List<ContentCategory>> list() {
@@ -78,4 +84,3 @@ public class ContentCategoryController {
         return ResultVo.success(contentCategoryService.selectAll());
     }
 }
-

@@ -9,6 +9,10 @@ export interface ContentCategoryVo {
   remark?: string
 }
 
+export interface ContentCategoryTreeVo extends ContentCategoryVo {
+  children?: ContentCategoryTreeVo[]
+}
+
 export interface ContentCategoryQuery {
   page: number
   pageSize: number
@@ -93,3 +97,9 @@ export const getContentCategorySelectAll = () => {
   })
 }
 
+export const getContentCategoryTree = () => {
+  return request<ResultVo<ContentCategoryTreeVo[]>>({
+    url: '/content/category/tree',
+    method: 'GET',
+  })
+}
