@@ -1,9 +1,9 @@
 import request from '@/utils/axios.ts'
 
 export interface ContentCategoryVo {
-  id?: number
+  id?: string
   name?: string
-  parentId?: number
+  parentId?: string
   sort?: number
   status?: number
   remark?: string
@@ -21,7 +21,7 @@ export interface ContentCategoryQuery {
 export interface ContentCategoryCreate extends Omit<ContentCategoryVo, 'id'> {}
 
 export interface ContentCategoryUpdate extends ContentCategoryCreate {
-  id: number
+  id: string
 }
 
 export interface PageVo<T> {
@@ -43,7 +43,7 @@ export const getContentCategoryPage = (data: ContentCategoryQuery) => {
   })
 }
 
-export const getContentCategoryById = (id: number) => {
+export const getContentCategoryById = (id: string) => {
   return request<ResultVo<ContentCategoryVo>>({
     url: `/content/category/${id}`,
     method: 'GET',
@@ -68,14 +68,14 @@ export const updateContentCategory = (data: ContentCategoryUpdate, requestId?: s
   })
 }
 
-export const deleteContentCategory = (id: number) => {
+export const deleteContentCategory = (id: string) => {
   return request<ResultVo<object>>({
     url: `/content/category/${id}`,
     method: 'DELETE',
   })
 }
 
-export const batchDeleteContentCategory = (ids: number[]) => {
+export const batchDeleteContentCategory = (ids: string[]) => {
   return request<ResultVo<object>>({
     url: '/content/category/batch',
     method: 'DELETE',

@@ -112,16 +112,16 @@ const columns = [
 const loading = ref(false)
 const submitLoading = ref(false)
 const dataSource = ref<ContentCategoryTreeVo[]>([])
-const selectedRowKeys = ref<number[]>([])
+const selectedRowKeys = ref<string[]>([])
 
 const modalVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
-type ContentCategoryFormData = ContentCategoryCreate & { id?: number }
+type ContentCategoryFormData = ContentCategoryCreate & { id?: string }
 const formData = reactive<ContentCategoryFormData>({
   id: undefined,
   name: '',
-  parentId: 0,
+  parentId: '0',
   sort: 0,
   status: 1,
   remark: '',
@@ -129,6 +129,27 @@ const formData = reactive<ContentCategoryFormData>({
 
 const rules = {
   name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+}
+
+const toIdString = (value: any): string | undefined => {
+  if (value === null || value === undefined || value === '') return undefined
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'bigint') return String(value)
+  if (typeof value === 'object' && typeof value.toString === 'function') {
+    const s = value.toString()
+    if (s && s !== '[object Object]') return s
+  }
+  return String(value)
+}
+
+const normalizeTree = (nodes: any[] | undefined): ContentCategoryTreeVo[] => {
+  if (!nodes?.length) return []
+  return nodes.map((n) => ({
+    ...n,
+    id: toIdString(n.id),
+    parentId: toIdString(n.parentId),
+    children: normalizeTree(n.children),
+  }))
 }
 
 const countTree = (nodes: ContentCategoryTreeVo[] | undefined): number => {
@@ -142,18 +163,18 @@ const countTree = (nodes: ContentCategoryTreeVo[] | undefined): number => {
 
 const totalCount = computed(() => countTree(dataSource.value))
 
-type TreeSelectNode = { title: string; value: number; children?: TreeSelectNode[] }
+type TreeSelectNode = { title: string; value: string; children?: TreeSelectNode[] }
 const buildTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): TreeSelectNode[] => {
   if (!nodes?.length) return []
   return nodes.map((n) => ({
     title: n.name || `${n.id}`,
-    value: Number(n.id),
+    value: n.id!,
     children: buildTreeSelect(n.children),
   }))
 }
 
 const parentTreeData = computed<TreeSelectNode[]>(() => [
-  { title: '顶级分类', value: 0, children: buildTreeSelect(dataSource.value) },
+  { title: '顶级分类', value: '0', children: buildTreeSelect(dataSource.value) },
 ])
 
 const loadData = async () => {
@@ -161,7 +182,7 @@ const loadData = async () => {
   try {
     const res: any = await getContentCategoryTree()
     if (res.code === 200) {
-      dataSource.value = res.data || []
+      dataSource.value = normalizeTree(res.data || [])
     }
   } finally {
     loading.value = false
@@ -172,13 +193,13 @@ const reset = () => {
   loadData()
 }
 
-const onSelectChange = (keys: number[]) => {
+const onSelectChange = (keys: string[]) => {
   selectedRowKeys.value = keys
 }
 
 const handleAdd = () => {
   isEdit.value = false
-  Object.assign(formData, { id: undefined, name: '', parentId: 0, sort: 0, status: 1, remark: '' })
+  Object.assign(formData, { id: undefined, name: '', parentId: '0', sort: 0, status: 1, remark: '' })
   modalVisible.value = true
 }
 
@@ -186,7 +207,11 @@ const handleEdit = async (record: ContentCategoryTreeVo) => {
   isEdit.value = true
   const res: any = await getContentCategoryById(record.id!)
   if (res.code === 200) {
-    Object.assign(formData, { ...res.data, parentId: res.data?.parentId ?? 0 })
+    Object.assign(formData, {
+      ...res.data,
+      id: toIdString(res.data?.id),
+      parentId: toIdString(res.data?.parentId) ?? '0',
+    })
   }
   modalVisible.value = true
 }
@@ -197,7 +222,7 @@ const handleSubmit = async () => {
     submitLoading.value = true
     const reqId = getRequestId()
     const payload = { ...formData }
-    if (payload.parentId === 0) payload.parentId = undefined
+    if (payload.parentId === '0') payload.parentId = undefined
     const res: any = isEdit.value
       ? await updateContentCategory(payload as ContentCategoryUpdate, reqId)
       : await createContentCategory(payload, reqId)
@@ -216,7 +241,7 @@ const handleCancel = () => {
   setTimeout(() => formRef.value?.resetFields(), 300)
 }
 
-const handleDeleteOne = (record: ContentCategoryVo) => {
+const handleDeleteOne = (record: ContentCategoryTreeVo) => {
   Modal.confirm({
     title: '确认删除',
     content: `确定删除分类「${record.name || record.id}」？`,
