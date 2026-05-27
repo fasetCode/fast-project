@@ -5,6 +5,11 @@ export interface ContentInfoVo {
   title?: string
   summary?: string
   cover?: string
+  format?: string
+  content?: string
+  contentHtml?: string
+  wordCount?: number
+  readingTime?: number
   categoryIds?: number[]
   tagIds?: number[]
   authorId?: number

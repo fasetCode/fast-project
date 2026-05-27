@@ -136,7 +136,7 @@
             </a-select>
           </a-form-item></a-col>
           <a-col :span="24"><a-form-item label="正文" name="contentHtml">
-            <TipTapEditor v-model="revisionHtml" placeholder="请输入正文" :min-height="420" />
+            <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="420" />
           </a-form-item></a-col>
         </a-row>
       </a-form>
@@ -155,7 +155,6 @@ import type { ContentCategoryTreeVo } from '@/api/content/contentcategory'
 import { getContentCategoryTree } from '@/api/content/contentcategory'
 import type { ContentTagVo } from '@/api/content/contenttag'
 import { getContentTagSelectAll } from '@/api/content/contenttag'
-import { createContentRevision, getContentRevisionLatest } from '@/api/content/contentrevision'
 import { getFileUrl } from '@/api/file/fileupload'
 import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData, getDictLabel } from '@/utils/dict.ts'
@@ -215,6 +214,11 @@ const formData = reactive<ContentInfoFormData>({
   title: '',
   summary: '',
   cover: '',
+  format: 'html',
+  content: '',
+  contentHtml: '',
+  wordCount: 0,
+  readingTime: 0,
   categoryIds: [],
   tagIds: [],
   authorId: undefined,
@@ -241,10 +245,6 @@ const tagSelectOptions = computed(() =>
     .map((t) => ({ value: Number(t.id), label: t.name || String(t.id) }))
 )
 const selectedTagIds = ref<number[]>([])
-
-const revisionHtml = ref('')
-const originRevisionHtml = ref('')
-const latestRevisionVersion = ref(0)
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
@@ -332,6 +332,11 @@ const stripHtml = (html: string) => {
     .trim()
 }
 
+const getReadingTime = (wordCount: number) => {
+  if (!wordCount || wordCount <= 0) return 0
+  return Math.max(1, Math.ceil(wordCount / 500))
+}
+
 const loadMeta = async () => {
   const [catRes, tagRes] = await Promise.all([getContentCategoryTree(), getContentTagSelectAll()])
   if (catRes.code === 200) {
@@ -382,6 +387,11 @@ const handleAdd = () => {
     title: '',
     summary: '',
     cover: '',
+    format: 'html',
+    content: '',
+    contentHtml: '',
+    wordCount: 0,
+    readingTime: 0,
     categoryIds: [],
     tagIds: [],
     authorId: undefined,
@@ -397,9 +407,6 @@ const handleAdd = () => {
   })
   selectedCategoryIds.value = []
   selectedTagIds.value = []
-  revisionHtml.value = ''
-  originRevisionHtml.value = ''
-  latestRevisionVersion.value = 0
   modalVisible.value = true
 }
 
@@ -415,44 +422,7 @@ const handleEdit = async (record: ContentInfoVo) => {
   }
   selectedCategoryIds.value = normalizeCategoryIds(formData.categoryIds).map((item) => String(item))
   selectedTagIds.value = normalizeTagIds(formData.tagIds)
-
-  const revRes: any = await getContentRevisionLatest(record.id!)
-  if (revRes.code === 200 && revRes.data) {
-    revisionHtml.value = revRes.data.contentHtml || revRes.data.content || ''
-    originRevisionHtml.value = revisionHtml.value
-    latestRevisionVersion.value = Number(revRes.data.version || 0)
-  } else {
-    revisionHtml.value = ''
-    originRevisionHtml.value = ''
-    latestRevisionVersion.value = 0
-  }
   modalVisible.value = true
-}
-
-const saveRevisionIfNeeded = async (contentId: number, requestId: string) => {
-  const html = revisionHtml.value || ''
-  const changed = html !== (originRevisionHtml.value || '')
-  const shouldSave = isEdit.value ? changed : Boolean(html.trim())
-  if (!shouldSave) return
-
-  const text = stripHtml(html)
-  const res: any = await createContentRevision(
-    {
-      contentId,
-      version: (latestRevisionVersion.value || 0) + 1,
-      format: 'html',
-      content: text,
-      contentHtml: html,
-      wordCount: text.length,
-    },
-    requestId
-  )
-
-  if (res.code !== 200) {
-    throw new Error(res.msg || '保存正文失败')
-  }
-  originRevisionHtml.value = html
-  latestRevisionVersion.value = (latestRevisionVersion.value || 0) + 1
 }
 
 const handleSubmit = async () => {
@@ -463,13 +433,16 @@ const handleSubmit = async () => {
     const payload: any = { ...formData }
     payload.categoryIds = normalizeCategoryIds(selectedCategoryIds.value)
     payload.tagIds = normalizeTagIds(selectedTagIds.value)
+    payload.format = payload.format || 'html'
+    payload.contentHtml = payload.contentHtml || ''
+    payload.content = stripHtml(payload.contentHtml)
+    payload.wordCount = payload.content.length
+    payload.readingTime = getReadingTime(payload.wordCount)
 
     const res: any = isEdit.value
       ? await updateContentInfo(payload as ContentInfoUpdate, reqId)
       : await createContentInfo(payload as ContentInfoCreate, reqId)
     if (res.code === 200) {
-      const contentId = isEdit.value ? Number(formData.id) : Number(res.data)
-      await saveRevisionIfNeeded(contentId, reqId)
       message.success(isEdit.value ? '更新成功' : '创建成功')
       modalVisible.value = false
       loadData()

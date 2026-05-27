@@ -1,11 +1,15 @@
 package com.fastproject.content.service.impl;
 
+import com.fastproject.content.domain.ContentBody;
 import com.fastproject.content.domain.ContentCategoryRel;
 import com.fastproject.content.domain.ContentInfo;
+import com.fastproject.content.domain.ContentRevision;
 import com.fastproject.content.domain.ContentTagRel;
 import com.fastproject.content.mapper.ContentInfoMapper;
+import com.fastproject.content.repository.db.ContentBodyRepository;
 import com.fastproject.content.repository.db.ContentCategoryRelRepository;
 import com.fastproject.content.repository.db.ContentInfoRepository;
+import com.fastproject.content.repository.db.ContentRevisionRepository;
 import com.fastproject.content.repository.db.ContentTagRelRepository;
 import com.fastproject.content.service.ContentInfoService;
 import com.fastproject.content.vo.info.ContentInfoCreate;
@@ -27,7 +31,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +39,8 @@ import java.util.stream.Collectors;
 public class ContentInfoServiceImpl implements ContentInfoService {
 
     private final ContentInfoRepository repository;
+    private final ContentBodyRepository contentBodyRepository;
+    private final ContentRevisionRepository contentRevisionRepository;
     private final ContentCategoryRelRepository categoryRelRepository;
     private final ContentTagRelRepository tagRelRepository;
     private final ContentInfoMapper mapper;
@@ -44,6 +50,8 @@ public class ContentInfoServiceImpl implements ContentInfoService {
     public Long save(ContentInfoCreate create) {
         ContentInfo entity = mapper.toEntity(create);
         repository.save(entity);
+        saveBody(entity.getId(), create.getFormat(), create.getContent(), create.getContentHtml(), create.getWordCount(), create.getReadingTime());
+        saveRevision(entity.getId(), create.getFormat(), create.getContent(), create.getContentHtml(), create.getWordCount());
         saveRelations(entity.getId(), create.getCategoryIds(), create.getTagIds());
         return entity.getId();
     }
@@ -54,6 +62,8 @@ public class ContentInfoServiceImpl implements ContentInfoService {
         ContentInfo entity = repository.findById(update.getId()).orElseThrow(() -> new BusinessException("数据不存在"));
         mapper.updateFromDto(update, entity);
         repository.save(entity);
+        saveBody(entity.getId(), update.getFormat(), update.getContent(), update.getContentHtml(), update.getWordCount(), update.getReadingTime());
+        saveRevision(entity.getId(), update.getFormat(), update.getContent(), update.getContentHtml(), update.getWordCount());
         saveRelations(entity.getId(), update.getCategoryIds(), update.getTagIds());
     }
 
@@ -75,7 +85,7 @@ public class ContentInfoServiceImpl implements ContentInfoService {
     @Override
     public ContentInfoVo findById(Long id) {
         ContentInfo entity = repository.findById(id).orElse(null);
-        return entity != null ? fillRelationData(mapper.toVo(entity)) : null;
+        return entity != null ? fillBodyData(fillRelationData(mapper.toVo(entity))) : null;
     }
 
     @Override
@@ -142,6 +152,14 @@ public class ContentInfoServiceImpl implements ContentInfoService {
         if (contentIds == null || contentIds.isEmpty()) {
             return;
         }
+        List<ContentBody> bodies = contentBodyRepository.findAllByContentIdIn(contentIds);
+        if (!bodies.isEmpty()) {
+            contentBodyRepository.deleteAll(bodies);
+        }
+        List<ContentRevision> revisions = contentRevisionRepository.findAllByContentIdIn(contentIds);
+        if (!revisions.isEmpty()) {
+            contentRevisionRepository.deleteAll(revisions);
+        }
         List<ContentCategoryRel> categoryRelations = categoryRelRepository.findAllByContentIdIn(contentIds);
         if (!categoryRelations.isEmpty()) {
             categoryRelRepository.deleteAll(categoryRelations);
@@ -160,6 +178,22 @@ public class ContentInfoServiceImpl implements ContentInfoService {
         vo.setCategoryIds(normalizeIds(categoryRelations.stream().map(ContentCategoryRel::getCategoryId).toList()));
         List<ContentTagRel> tagRelations = tagRelRepository.findAllByContentId(vo.getId());
         vo.setTagIds(normalizeTagIds(tagRelations.stream().map(ContentTagRel::getTagId).toList()));
+        return vo;
+    }
+
+    private ContentInfoVo fillBodyData(ContentInfoVo vo) {
+        if (vo == null || vo.getId() == null) {
+            return vo;
+        }
+        ContentBody body = contentBodyRepository.findTopByContentIdOrderByIdDesc(vo.getId());
+        if (body == null) {
+            return vo;
+        }
+        vo.setFormat(body.getFormat());
+        vo.setContent(body.getContent());
+        vo.setContentHtml(body.getContentHtml());
+        vo.setWordCount(body.getWordCount());
+        vo.setReadingTime(body.getReadingTime());
         return vo;
     }
 
@@ -212,5 +246,62 @@ public class ContentInfoServiceImpl implements ContentInfoService {
         return new ArrayList<>(ids.stream()
                 .filter(id -> id != null)
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
+    }
+
+    private void saveBody(Long contentId, String format, String content, String contentHtml, Integer wordCount, Integer readingTime) {
+        if (contentId == null) {
+            return;
+        }
+        ContentBody body = contentBodyRepository.findTopByContentIdOrderByIdDesc(contentId);
+        if (body == null) {
+            if (isBodyEmpty(format, content, contentHtml, wordCount, readingTime)) {
+                return;
+            }
+            body = new ContentBody();
+            body.setContentId(contentId);
+        }
+        body.setFormat(format);
+        body.setContent(content);
+        body.setContentHtml(contentHtml);
+        body.setWordCount(wordCount);
+        body.setReadingTime(readingTime);
+        contentBodyRepository.save(body);
+    }
+
+    private boolean isBodyEmpty(String format, String content, String contentHtml, Integer wordCount, Integer readingTime) {
+        return isBlank(format)
+                && isBlank(content)
+                && isBlank(contentHtml)
+                && wordCount == null
+                && readingTime == null;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private void saveRevision(Long contentId, String format, String content, String contentHtml, Integer wordCount) {
+        if (contentId == null || isBodyEmpty(format, content, contentHtml, wordCount, null)) {
+            return;
+        }
+        ContentRevision latest = contentRevisionRepository.findTopByContentIdOrderByVersionDescIdDesc(contentId);
+        if (latest != null && isSameRevision(latest, format, content, contentHtml, wordCount)) {
+            return;
+        }
+        ContentRevision revision = new ContentRevision();
+        revision.setContentId(contentId);
+        revision.setVersion(latest == null || latest.getVersion() == null ? 1 : latest.getVersion() + 1);
+        revision.setFormat(format);
+        revision.setContent(content);
+        revision.setContentHtml(contentHtml);
+        revision.setWordCount(wordCount);
+        contentRevisionRepository.save(revision);
+    }
+
+    private boolean isSameRevision(ContentRevision revision, String format, String content, String contentHtml, Integer wordCount) {
+        return Objects.equals(revision.getFormat(), format)
+                && Objects.equals(revision.getContent(), content)
+                && Objects.equals(revision.getContentHtml(), contentHtml)
+                && Objects.equals(revision.getWordCount(), wordCount);
     }
 }

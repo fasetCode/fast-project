@@ -13,6 +13,11 @@ public class ContentInfoUpdate {
     private String title;
     private String summary;
     private String cover;
+    private String format;
+    private String content;
+    private String contentHtml;
+    private Integer wordCount;
+    private Integer readingTime;
     private List<Long> categoryIds;
     private List<Long> tagIds;
     private Long authorId;
