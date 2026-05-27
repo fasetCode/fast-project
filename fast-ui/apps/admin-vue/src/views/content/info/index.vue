@@ -81,89 +81,24 @@
       </div>
     </div>
 
-    <a-modal
-      v-model:open="modalVisible"
-      :title="isEdit ? '编辑内容' : '新增内容'"
-      width="100vw"
-      wrap-class-name="content-info-fullscreen-modal"
-      :destroy-on-close="true"
-      @cancel="handleCancel"
-      @ok="handleSubmit"
-      :confirm-loading="submitLoading"
-    >
-      <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
-        <a-row :gutter="16">
-          <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
-          <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="分类" name="categoryIds">
-            <a-tree-select
-              v-model:value="selectedCategoryIds"
-              :tree-data="categoryTreeData"
-              :field-names="{ label: 'title', value: 'value', children: 'children' }"
-              multiple
-              allow-clear
-              tree-default-expand-all
-              style="width:100%"
-              placeholder="请选择分类"
-            />
-          </a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="标签" name="tagIds">
-            <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
-              <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-            </a-select>
-          </a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="推荐" name="recommendFlag"><a-switch v-model:checked="formData.recommendFlag" /></a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="允许评论" name="allowComment"><a-switch v-model:checked="formData.allowComment" /></a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="状态" name="status">
-            <a-select v-model:value="formData.status" allow-clear>
-              <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-            </a-select>
-          </a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="发布状态" name="publishStatus">
-            <a-select v-model:value="formData.publishStatus" allow-clear>
-              <a-select-option v-for="item in publishStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-            </a-select>
-          </a-form-item></a-col>
-          <a-col :span="8"><a-form-item label="审核状态" name="auditStatus">
-            <a-select v-model:value="formData.auditStatus" allow-clear>
-              <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-            </a-select>
-          </a-form-item></a-col>
-          <a-col :span="24"><a-form-item label="正文" name="contentHtml">
-            <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="420" />
-          </a-form-item></a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
+    <AddOrUpdate ref="addOrUpdateRef" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue'
-import type { FormInstance } from 'ant-design-vue'
-import type { ContentInfoVo, ContentInfoQuery, ContentInfoCreate, ContentInfoUpdate } from '@/api/content/contentinfo'
-import { getContentInfoPage, getContentInfoById, createContentInfo, updateContentInfo, deleteContentInfo, batchDeleteContentInfo } from '@/api/content/contentinfo'
+import type { ContentInfoVo, ContentInfoQuery } from '@/api/content/contentinfo'
+import { getContentInfoPage, deleteContentInfo, batchDeleteContentInfo } from '@/api/content/contentinfo'
 import type { ContentCategoryTreeVo } from '@/api/content/contentcategory'
 import { getContentCategoryTree } from '@/api/content/contentcategory'
 import type { ContentTagVo } from '@/api/content/contenttag'
 import { getContentTagSelectAll } from '@/api/content/contenttag'
 import { getFileUrl } from '@/api/file/fileupload'
-import { getRequestId } from '@/utils/idUtils.ts'
-import { getDictData, getDictLabel } from '@/utils/dict.ts'
-import ImageUpload from '@/components/ImageUpload/index.vue'
-import TipTapEditor from '@/components/TipTapEditor/index.vue'
-
-const statusOptions = computed(() => (getDictData('status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
-const publishStatusOptions = computed(() => (getDictData('content_publish_status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
-const auditStatusOptions = computed(() => (getDictData('content_audit_status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
+import { getDictLabel } from '@/utils/dict.ts'
+import AddOrUpdate from './AddOrUpdate.vue'
+import type { AddOrUpdateRef } from './AddOrUpdate.vue'
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
@@ -181,9 +116,9 @@ const columns = [
 ]
 
 const loading = ref(false)
-const submitLoading = ref(false)
 const dataSource = ref<ContentInfoVo[]>([])
 const selectedRowKeys = ref<number[]>([])
+const addOrUpdateRef = ref<AddOrUpdateRef>()
 
 const resolveImage = (val: any) => {
   if (!val) return ''
@@ -205,50 +140,9 @@ const pagination = reactive({
   showTotal: (total: number) => `共 ${total} 条数据`,
 })
 
-const modalVisible = ref(false)
-const isEdit = ref(false)
-const formRef = ref<FormInstance>()
-type ContentInfoFormData = ContentInfoCreate & { id?: number }
-const formData = reactive<ContentInfoFormData>({
-  id: undefined,
-  title: '',
-  summary: '',
-  cover: '',
-  format: 'html',
-  content: '',
-  contentHtml: '',
-  wordCount: 0,
-  readingTime: 0,
-  categoryIds: [],
-  tagIds: [],
-  authorId: undefined,
-  authorName: '',
-  source: '',
-  sourceUrl: '',
-  topFlag: false,
-  recommendFlag: false,
-  allowComment: true,
-  status: 1,
-  publishStatus: undefined,
-  auditStatus: undefined,
-})
-
-type TreeSelectNode = { title: string; value: string; children?: TreeSelectNode[] }
 const categoryTree = ref<ContentCategoryTreeVo[]>([])
-const categoryTreeData = computed<TreeSelectNode[]>(() => buildCategoryTreeSelect(categoryTree.value))
-const selectedCategoryIds = ref<string[]>([])
 
 const tagList = ref<ContentTagVo[]>([])
-const tagSelectOptions = computed(() =>
-  (tagList.value || [])
-    .filter((t) => t && t.id !== undefined && t.id !== null)
-    .map((t) => ({ value: Number(t.id), label: t.name || String(t.id) }))
-)
-const selectedTagIds = ref<number[]>([])
-
-const rules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-}
 
 const toIdString = (value: any): string | undefined => {
   if (value === null || value === undefined || value === '') return undefined
@@ -268,15 +162,6 @@ const normalizeCategoryTree = (nodes: any[] | undefined): ContentCategoryTreeVo[
     id: toIdString(n.id),
     parentId: toIdString(n.parentId),
     children: normalizeCategoryTree(n.children),
-  }))
-}
-
-const buildCategoryTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): TreeSelectNode[] => {
-  if (!nodes?.length) return []
-  return nodes.map((n) => ({
-    title: n.name || `${n.id}`,
-    value: String(n.id),
-    children: buildCategoryTreeSelect(n.children),
   }))
 }
 
@@ -319,22 +204,6 @@ const getTagNames = (val: any): string[] => {
   if (!ids.length) return []
   const map = new Map((tagList.value || []).map((t) => [Number(t.id), t.name || String(t.id)]))
   return ids.map((id) => map.get(id) || String(id))
-}
-
-const stripHtml = (html: string) => {
-  if (!html) return ''
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-const getReadingTime = (wordCount: number) => {
-  if (!wordCount || wordCount <= 0) return 0
-  return Math.max(1, Math.ceil(wordCount / 500))
 }
 
 const loadMeta = async () => {
@@ -381,80 +250,12 @@ const onSelectChange = (keys: number[]) => {
 }
 
 const handleAdd = () => {
-  isEdit.value = false
-  Object.assign(formData, {
-    id: undefined,
-    title: '',
-    summary: '',
-    cover: '',
-    format: 'html',
-    content: '',
-    contentHtml: '',
-    wordCount: 0,
-    readingTime: 0,
-    categoryIds: [],
-    tagIds: [],
-    authorId: undefined,
-    authorName: '',
-    source: '',
-    sourceUrl: '',
-    topFlag: false,
-    recommendFlag: false,
-    allowComment: true,
-    status: 1,
-    publishStatus: undefined,
-    auditStatus: undefined,
-  })
-  selectedCategoryIds.value = []
-  selectedTagIds.value = []
-  modalVisible.value = true
+  addOrUpdateRef.value?.openForAdd()
 }
 
-const handleEdit = async (record: ContentInfoVo) => {
-  isEdit.value = true
-  const res: any = await getContentInfoById(record.id!)
-  if (res.code === 200) {
-    Object.assign(formData, {
-      ...res.data,
-      categoryIds: normalizeCategoryIds(res.data?.categoryIds),
-      tagIds: normalizeTagIds(res.data?.tagIds),
-    })
-  }
-  selectedCategoryIds.value = normalizeCategoryIds(formData.categoryIds).map((item) => String(item))
-  selectedTagIds.value = normalizeTagIds(formData.tagIds)
-  modalVisible.value = true
-}
-
-const handleSubmit = async () => {
-  try {
-    await formRef.value?.validate()
-    submitLoading.value = true
-    const reqId = getRequestId()
-    const payload: any = { ...formData }
-    payload.categoryIds = normalizeCategoryIds(selectedCategoryIds.value)
-    payload.tagIds = normalizeTagIds(selectedTagIds.value)
-    payload.format = payload.format || 'html'
-    payload.contentHtml = payload.contentHtml || ''
-    payload.content = stripHtml(payload.contentHtml)
-    payload.wordCount = payload.content.length
-    payload.readingTime = getReadingTime(payload.wordCount)
-
-    const res: any = isEdit.value
-      ? await updateContentInfo(payload as ContentInfoUpdate, reqId)
-      : await createContentInfo(payload as ContentInfoCreate, reqId)
-    if (res.code === 200) {
-      message.success(isEdit.value ? '更新成功' : '创建成功')
-      modalVisible.value = false
-      loadData()
-    }
-  } finally {
-    submitLoading.value = false
-  }
-}
-
-const handleCancel = () => {
-  modalVisible.value = false
-  setTimeout(() => formRef.value?.resetFields(), 300)
+const handleEdit = (record: ContentInfoVo) => {
+  if (!record.id) return
+  addOrUpdateRef.value?.openForEdit(record.id)
 }
 
 const handleDeleteOne = (record: ContentInfoVo) => {
@@ -498,27 +299,4 @@ onMounted(() => {
 
 <style scoped>
 @import '@/assets/styles/modern-dashboard.css';
-</style>
-
-<style>
-.content-info-fullscreen-modal .ant-modal {
-  top: 0;
-  width: 100vw !important;
-  max-width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding-bottom: 0;
-}
-
-.content-info-fullscreen-modal .ant-modal-content {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0;
-}
-
-.content-info-fullscreen-modal .ant-modal-body {
-  flex: 1;
-  overflow: auto;
-}
 </style>
