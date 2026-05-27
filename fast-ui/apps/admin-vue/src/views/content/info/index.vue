@@ -3,6 +3,45 @@
     <div class="filter-bar">
       <a-form :model="queryParams" class="elegant-form">
         <div class="filter-grid">
+          <div class="filter-item">
+            <span class="filter-label">发布人</span>
+            <a-input-number
+              v-model:value="queryParams.authorId"
+              class="elegant-input"
+              placeholder="发布人ID"
+              style="width: 100%"
+              :min="1"
+            />
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">审核人</span>
+            <a-input-number
+              v-model:value="queryParams.auditBy"
+              class="elegant-input"
+              placeholder="审核人ID"
+              style="width: 100%"
+              :min="1"
+            />
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">分类</span>
+            <a-tree-select
+              v-model:value="queryParams.categoryIds"
+              :tree-data="categoryTreeData"
+              :field-names="{ label: 'title', value: 'value', children: 'children' }"
+              multiple
+              allow-clear
+              tree-default-expand-all
+              class="elegant-select"
+              placeholder="选择分类"
+            />
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">标签</span>
+            <a-select v-model:value="queryParams.tagIds" mode="multiple" allow-clear class="elegant-select" placeholder="选择标签">
+              <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+            </a-select>
+          </div>
           <div class="filter-actions">
             <a-button class="icon-btn refresh-btn" @click="reset()" shape="circle" :loading="loading">
               <template #icon v-if="!loading"><ReloadOutlined /></template>
@@ -86,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue'
 import type { ContentInfoVo, ContentInfoQuery } from '@/api/content/contentinfo'
@@ -130,6 +169,10 @@ const resolveImage = (val: any) => {
 const queryParams = reactive<ContentInfoQuery>({
   page: 1,
   pageSize: 10,
+  authorId: undefined,
+  auditBy: undefined,
+  categoryIds: [],
+  tagIds: [],
 })
 
 const pagination = reactive({
@@ -142,7 +185,26 @@ const pagination = reactive({
 
 const categoryTree = ref<ContentCategoryTreeVo[]>([])
 
+type TreeSelectNode = { title: string; value: string; children?: TreeSelectNode[] }
+
+const buildCategoryTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): TreeSelectNode[] => {
+  if (!nodes?.length) return []
+  return nodes.map((node) => ({
+    title: node.name || `${node.id}`,
+    value: String(node.id),
+    children: buildCategoryTreeSelect(node.children),
+  }))
+}
+
+const categoryTreeData = computed<TreeSelectNode[]>(() => buildCategoryTreeSelect(categoryTree.value))
+
 const tagList = ref<ContentTagVo[]>([])
+
+const tagSelectOptions = computed(() =>
+  (tagList.value || [])
+    .filter((t) => t && t.id !== undefined && t.id !== null)
+    .map((t) => ({ value: Number(t.id), label: t.name || String(t.id) }))
+)
 
 const toIdString = (value: any): string | undefined => {
   if (value === null || value === undefined || value === '') return undefined
@@ -199,6 +261,12 @@ const normalizeTagIds = (val: any): number[] => {
     .filter((item) => Number.isFinite(item))
 }
 
+const normalizeLong = (val: any): number | undefined => {
+  if (val === null || val === undefined || val === '') return undefined
+  const num = Number(val)
+  return Number.isFinite(num) ? num : undefined
+}
+
 const getTagNames = (val: any): string[] => {
   const ids = normalizeTagIds(val)
   if (!ids.length) return []
@@ -221,6 +289,10 @@ const loadData = async () => {
   try {
     const params: ContentInfoQuery = {
       ...queryParams,
+      authorId: normalizeLong(queryParams.authorId),
+      auditBy: normalizeLong(queryParams.auditBy),
+      categoryIds: normalizeCategoryIds(queryParams.categoryIds),
+      tagIds: normalizeTagIds(queryParams.tagIds),
       page: pagination.current - 1,
       pageSize: pagination.pageSize,
     }
@@ -242,6 +314,10 @@ const handleTableChange = (pag: any) => {
 
 const reset = () => {
   pagination.current = 1
+  queryParams.authorId = undefined
+  queryParams.auditBy = undefined
+  queryParams.categoryIds = []
+  queryParams.tagIds = []
   loadData()
 }
 

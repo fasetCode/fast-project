@@ -18,11 +18,15 @@ import com.fastproject.content.vo.info.ContentInfoUpdate;
 import com.fastproject.content.vo.info.ContentInfoVo;
 import com.fastproject.exception.BusinessException;
 import com.fastproject.utils.vo.PageVo;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,7 +95,38 @@ public class ContentInfoServiceImpl implements ContentInfoService {
     @Override
     public PageVo<List<ContentInfoVo>> findPage(ContentInfoQuery query) {
         Pageable pageable = PageRequest.of(query.getPage(), query.getPageSize(), Sort.by("id").descending());
-        Page<ContentInfo> page = repository.findAll(pageable);
+        Specification<ContentInfo> spec = (root, criteriaQuery, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (query.getAuthorId() != null) {
+                predicates.add(cb.equal(root.get("authorId"), query.getAuthorId()));
+            }
+            if (query.getAuditBy() != null) {
+                predicates.add(cb.equal(root.get("auditBy"), query.getAuditBy()));
+            }
+
+            List<Long> categoryIds = normalizeIds(query.getCategoryIds());
+            if (!categoryIds.isEmpty()) {
+                Subquery<Long> categorySubQuery = criteriaQuery.subquery(Long.class);
+                Root<ContentCategoryRel> categoryRoot = categorySubQuery.from(ContentCategoryRel.class);
+                categorySubQuery.select(categoryRoot.get("contentId"))
+                        .where(categoryRoot.get("categoryId").in(categoryIds));
+                predicates.add(root.get("id").in(categorySubQuery));
+            }
+
+            List<Long> tagIds = normalizeTagIds(query.getTagIds());
+            if (!tagIds.isEmpty()) {
+                Subquery<Long> tagSubQuery = criteriaQuery.subquery(Long.class);
+                Root<ContentTagRel> tagRoot = tagSubQuery.from(ContentTagRel.class);
+                tagSubQuery.select(tagRoot.get("contentId"))
+                        .where(tagRoot.get("tagId").in(tagIds));
+                predicates.add(root.get("id").in(tagSubQuery));
+            }
+
+            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<ContentInfo> page = repository.findAll(spec, pageable);
         return PageVo.of(page.getTotalElements(), fillRelationData(mapper.toVo(page.getContent())));
     }
 

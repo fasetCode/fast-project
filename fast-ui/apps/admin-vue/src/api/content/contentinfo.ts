@@ -35,6 +35,10 @@ export interface ContentInfoVo {
 export interface ContentInfoQuery {
   page: number
   pageSize: number
+  authorId?: number | string
+  auditBy?: number | string
+  categoryIds?: Array<number | string>
+  tagIds?: number[]
 }
 
 export interface ContentInfoCreate extends Omit<ContentInfoVo, 'id'> {}
