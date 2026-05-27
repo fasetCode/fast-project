@@ -1,13 +1,12 @@
 package com.fastproject.content.domain;
 
-import com.fastproject.db.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
+import com.fastproject.utils.id.IdGenerator;
 
 /**
  * 内容标签关联表
@@ -18,11 +17,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 public class ContentTagRel {
 
-    /**
-     *  主键
-     */
     @Id
     private Long id;
+
     /**
      * 内容ID（关联 content_info.id）
      */
@@ -32,4 +29,11 @@ public class ContentTagRel {
      * 标签ID（关联 content_tag.id）
      */
     private Long tagId;
+
+    @PrePersist
+    public void prePersist() {
+        if (id == null) {
+            id = IdGenerator.nextId();
+        }
+    }
 }
