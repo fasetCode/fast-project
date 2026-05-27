@@ -5,23 +5,11 @@
         <div class="filter-grid">
           <div class="filter-item">
             <span class="filter-label">发布人</span>
-            <a-input-number
-              v-model:value="queryParams.authorId"
-              class="elegant-input"
-              placeholder="发布人ID"
-              style="width: 100%"
-              :min="1"
-            />
+            <UserPicker v-model:value="queryParams.authorId" placeholder="请选择发布人" />
           </div>
           <div class="filter-item">
             <span class="filter-label">审核人</span>
-            <a-input-number
-              v-model:value="queryParams.auditBy"
-              class="elegant-input"
-              placeholder="审核人ID"
-              style="width: 100%"
-              :min="1"
-            />
+            <UserPicker v-model:value="queryParams.auditBy" placeholder="请选择审核人" />
           </div>
           <div class="filter-item">
             <span class="filter-label">分类</span>
@@ -138,6 +126,7 @@ import { getFileUrl } from '@/api/file/fileupload'
 import { getDictLabel } from '@/utils/dict.ts'
 import AddOrUpdate from './AddOrUpdate.vue'
 import type { AddOrUpdateRef } from './AddOrUpdate.vue'
+import UserPicker from '@/components/UserPicker/index.vue'
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
