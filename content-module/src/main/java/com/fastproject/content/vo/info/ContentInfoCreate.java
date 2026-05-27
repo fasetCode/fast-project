@@ -3,14 +3,15 @@ package com.fastproject.content.vo.info;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class ContentInfoCreate {
     private String title;
     private String summary;
     private String cover;
-    private Long categoryId;
-    private String tags;
+    private List<Long> categoryIds;
+    private List<Long> tagIds;
     private Long authorId;
     private String authorName;
     private String source;

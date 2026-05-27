@@ -1,12 +1,10 @@
 package com.fastproject.content.domain;
 
-import com.fastproject.db.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 /**
  * 内容分类关联表
@@ -15,10 +13,12 @@ import org.hibernate.annotations.SQLRestriction;
 @Getter
 @Setter
 @Entity
-@SQLDelete(sql = "update content_category_rel set deleted = 1 where id = ?")
-@SQLRestriction("deleted = 0")
-public class ContentCategoryRel extends BaseEntity {
-
+public class ContentCategoryRel {
+    /**
+     *  主键
+     */
+    @Id
+    private Long id;
     /**
      * 内容ID（关联 content_info.id）
      */

@@ -51,12 +51,15 @@
               <a-image v-if="record.cover" :src="resolveImage(record.cover)" :width="44" :height="44" />
               <span v-else class="text-secondary">-</span>
             </template>
-            <template v-else-if="column.key === 'categoryId'">
-              <span>{{ getCategoryName(record.categoryId) }}</span>
+            <template v-else-if="column.key === 'categoryIds'">
+              <template v-if="getCategoryNames(record.categoryIds).length">
+                <a-tag v-for="name in getCategoryNames(record.categoryIds)" :key="name">{{ name }}</a-tag>
+              </template>
+              <span v-else class="text-secondary">-</span>
             </template>
-            <template v-else-if="column.key === 'tags'">
-              <template v-if="getTagNames(record.tags).length">
-                <a-tag v-for="t in getTagNames(record.tags)" :key="t">{{ t }}</a-tag>
+            <template v-else-if="column.key === 'tagIds'">
+              <template v-if="getTagNames(record.tagIds).length">
+                <a-tag v-for="t in getTagNames(record.tagIds)" :key="t">{{ t }}</a-tag>
               </template>
               <span v-else class="text-secondary">-</span>
             </template>
@@ -95,18 +98,19 @@
           <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="分类" name="categoryId">
+          <a-col :span="12"><a-form-item label="分类" name="categoryIds">
             <a-tree-select
-              v-model:value="categoryIdValue"
+              v-model:value="selectedCategoryIds"
               :tree-data="categoryTreeData"
               :field-names="{ label: 'title', value: 'value', children: 'children' }"
+              multiple
               allow-clear
               tree-default-expand-all
               style="width:100%"
               placeholder="请选择分类"
             />
           </a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="标签" name="tags">
+          <a-col :span="12"><a-form-item label="标签" name="tagIds">
             <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
               <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
             </a-select>
@@ -167,8 +171,8 @@ const columns = [
   { title: '标题', dataIndex: 'title', key: 'title', width: 260 },
   { title: '封面', dataIndex: 'cover', key: 'cover', width: 80 },
   { title: '作者', dataIndex: 'authorName', key: 'authorName', width: 140 },
-  { title: '分类', dataIndex: 'categoryId', key: 'categoryId', width: 160 },
-  { title: '标签', dataIndex: 'tags', key: 'tags', width: 220 },
+  { title: '分类', dataIndex: 'categoryIds', key: 'categoryIds', width: 220 },
+  { title: '标签', dataIndex: 'tagIds', key: 'tagIds', width: 220 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
   { title: '发布状态', dataIndex: 'publishStatus', key: 'publishStatus', width: 120 },
   { title: '审核状态', dataIndex: 'auditStatus', key: 'auditStatus', width: 120 },
@@ -211,8 +215,8 @@ const formData = reactive<ContentInfoFormData>({
   title: '',
   summary: '',
   cover: '',
-  categoryId: undefined,
-  tags: '',
+  categoryIds: [],
+  tagIds: [],
   authorId: undefined,
   authorName: '',
   source: '',
@@ -228,7 +232,7 @@ const formData = reactive<ContentInfoFormData>({
 type TreeSelectNode = { title: string; value: string; children?: TreeSelectNode[] }
 const categoryTree = ref<ContentCategoryTreeVo[]>([])
 const categoryTreeData = computed<TreeSelectNode[]>(() => buildCategoryTreeSelect(categoryTree.value))
-const categoryIdValue = ref<string | undefined>(undefined)
+const selectedCategoryIds = ref<string[]>([])
 
 const tagList = ref<ContentTagVo[]>([])
 const tagSelectOptions = computed(() =>
@@ -276,11 +280,21 @@ const buildCategoryTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): Tr
   }))
 }
 
-const getCategoryName = (categoryId: any) => {
-  if (categoryId === null || categoryId === undefined || categoryId === '') return '-'
-  const idStr = String(categoryId)
-  const found = findCategoryNodeById(categoryTree.value, idStr)
-  return found?.name || idStr
+const normalizeCategoryIds = (val: any): number[] => {
+  if (!Array.isArray(val)) return []
+  return val
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item))
+}
+
+const getCategoryNames = (categoryIds: any): string[] => {
+  const ids = normalizeCategoryIds(categoryIds)
+  if (!ids.length) return []
+  return ids.map((id) => {
+    const idStr = String(id)
+    const found = findCategoryNodeById(categoryTree.value, idStr)
+    return found?.name || idStr
+  })
 }
 
 const findCategoryNodeById = (nodes: ContentCategoryTreeVo[] | undefined, id: string): ContentCategoryTreeVo | undefined => {
@@ -293,18 +307,15 @@ const findCategoryNodeById = (nodes: ContentCategoryTreeVo[] | undefined, id: st
   return undefined
 }
 
-const parseTagIds = (val: any): number[] => {
-  if (!val) return []
-  return String(val)
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => Number(s))
-    .filter((n) => Number.isFinite(n))
+const normalizeTagIds = (val: any): number[] => {
+  if (!Array.isArray(val)) return []
+  return val
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item))
 }
 
 const getTagNames = (val: any): string[] => {
-  const ids = parseTagIds(val)
+  const ids = normalizeTagIds(val)
   if (!ids.length) return []
   const map = new Map((tagList.value || []).map((t) => [Number(t.id), t.name || String(t.id)]))
   return ids.map((id) => map.get(id) || String(id))
@@ -371,8 +382,8 @@ const handleAdd = () => {
     title: '',
     summary: '',
     cover: '',
-    categoryId: undefined,
-    tags: '',
+    categoryIds: [],
+    tagIds: [],
     authorId: undefined,
     authorName: '',
     source: '',
@@ -384,7 +395,7 @@ const handleAdd = () => {
     publishStatus: undefined,
     auditStatus: undefined,
   })
-  categoryIdValue.value = undefined
+  selectedCategoryIds.value = []
   selectedTagIds.value = []
   revisionHtml.value = ''
   originRevisionHtml.value = ''
@@ -396,10 +407,14 @@ const handleEdit = async (record: ContentInfoVo) => {
   isEdit.value = true
   const res: any = await getContentInfoById(record.id!)
   if (res.code === 200) {
-    Object.assign(formData, res.data)
+    Object.assign(formData, {
+      ...res.data,
+      categoryIds: normalizeCategoryIds(res.data?.categoryIds),
+      tagIds: normalizeTagIds(res.data?.tagIds),
+    })
   }
-  categoryIdValue.value = formData.categoryId !== undefined && formData.categoryId !== null ? String(formData.categoryId) : undefined
-  selectedTagIds.value = parseTagIds(formData.tags)
+  selectedCategoryIds.value = normalizeCategoryIds(formData.categoryIds).map((item) => String(item))
+  selectedTagIds.value = normalizeTagIds(formData.tagIds)
 
   const revRes: any = await getContentRevisionLatest(record.id!)
   if (revRes.code === 200 && revRes.data) {
@@ -446,8 +461,8 @@ const handleSubmit = async () => {
     submitLoading.value = true
     const reqId = getRequestId()
     const payload: any = { ...formData }
-    payload.categoryId = categoryIdValue.value ? Number(categoryIdValue.value) : undefined
-    payload.tags = selectedTagIds.value?.length ? selectedTagIds.value.join(',') : ''
+    payload.categoryIds = normalizeCategoryIds(selectedCategoryIds.value)
+    payload.tagIds = normalizeTagIds(selectedTagIds.value)
 
     const res: any = isEdit.value
       ? await updateContentInfo(payload as ContentInfoUpdate, reqId)

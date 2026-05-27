@@ -5,8 +5,8 @@ export interface ContentInfoVo {
   title?: string
   summary?: string
   cover?: string
-  categoryId?: number
-  tags?: string
+  categoryIds?: number[]
+  tagIds?: number[]
   authorId?: number
   authorName?: string
   source?: string
@@ -110,4 +110,3 @@ export const getContentInfoSelectAll = () => {
     method: 'GET',
   })
 }
-

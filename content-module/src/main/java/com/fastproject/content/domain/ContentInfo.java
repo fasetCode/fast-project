@@ -41,17 +41,6 @@ public class ContentInfo extends BaseEntity {
     private String cover;
 
     /**
-     * 分类ID
-     */
-    private Long categoryId;
-
-    /**
-     * 标签（可用逗号分隔等方式存储）
-     */
-    @Column(length = 1000)
-    private String tags;
-
-    /**
      * 作者用户ID
      */
     private Long authorId;
