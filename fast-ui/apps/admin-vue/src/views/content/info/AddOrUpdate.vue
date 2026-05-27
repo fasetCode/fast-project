@@ -12,6 +12,7 @@ import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData } from '@/utils/dict.ts'
 import ImageUpload from '@/components/ImageUpload/index.vue'
 import TipTapEditor from '@/components/TipTapEditor/index.vue'
+import TipTapViewer from '@/components/TipTapEditor/viewer.vue'
 
 export interface AddOrUpdateRef {
   openForAdd: () => void
@@ -258,72 +259,87 @@ onMounted(() => {
     :confirm-loading="submitLoading"
   >
     <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
-      <a-tabs v-model:activeKey="activeTab">
-        <a-tab-pane key="base" tab="基础信息">
-          <a-row :gutter="16">
-            <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
-            <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
-            <a-col :span="24"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
-          </a-row>
-        </a-tab-pane>
+      <div class="content-info-editor-layout">
+        <div class="content-info-editor-main">
+          <a-tabs v-model:activeKey="activeTab">
+            <a-tab-pane key="base" tab="基础信息">
+              <a-row :gutter="16">
+                <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
+                <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
+                <a-col :span="24"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
+              </a-row>
+            </a-tab-pane>
 
-        <a-tab-pane key="meta" tab="分类与标签">
-          <a-row :gutter="16">
-            <a-col :span="12"><a-form-item label="分类" name="categoryIds">
-              <a-tree-select
-                v-model:value="selectedCategoryIds"
-                :tree-data="categoryTreeData"
-                :field-names="{ label: 'title', value: 'value', children: 'children' }"
-                multiple
-                allow-clear
-                tree-default-expand-all
-                style="width:100%"
-                placeholder="请选择分类"
-              />
-            </a-form-item></a-col>
-            <a-col :span="12"><a-form-item label="标签" name="tagIds">
-              <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
-                <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-              </a-select>
-            </a-form-item></a-col>
-          </a-row>
-        </a-tab-pane>
+            <a-tab-pane key="meta" tab="分类与标签">
+              <a-row :gutter="16">
+                <a-col :span="12"><a-form-item label="分类" name="categoryIds">
+                  <a-tree-select
+                    v-model:value="selectedCategoryIds"
+                    :tree-data="categoryTreeData"
+                    :field-names="{ label: 'title', value: 'value', children: 'children' }"
+                    multiple
+                    allow-clear
+                    tree-default-expand-all
+                    style="width:100%"
+                    placeholder="请选择分类"
+                  />
+                </a-form-item></a-col>
+                <a-col :span="12"><a-form-item label="标签" name="tagIds">
+                  <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
+                    <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                  </a-select>
+                </a-form-item></a-col>
+              </a-row>
+            </a-tab-pane>
 
-        <a-tab-pane key="settings" tab="发布设置">
-          <a-row :gutter="16">
-            <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
-            <a-col :span="8"><a-form-item label="推荐" name="recommendFlag"><a-switch v-model:checked="formData.recommendFlag" /></a-form-item></a-col>
-            <a-col :span="8"><a-form-item label="允许评论" name="allowComment"><a-switch v-model:checked="formData.allowComment" /></a-form-item></a-col>
-            <a-col :span="8"><a-form-item label="状态" name="status">
-              <a-select v-model:value="formData.status" allow-clear>
-                <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-              </a-select>
-            </a-form-item></a-col>
-            <a-col :span="8"><a-form-item label="发布状态" name="publishStatus">
-              <a-select v-model:value="formData.publishStatus" allow-clear>
-                <a-select-option v-for="item in publishStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-              </a-select>
-            </a-form-item></a-col>
-            <a-col :span="8"><a-form-item label="审核状态" name="auditStatus">
-              <a-select v-model:value="formData.auditStatus" allow-clear>
-                <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-              </a-select>
-            </a-form-item></a-col>
-          </a-row>
-        </a-tab-pane>
+            <a-tab-pane key="settings" tab="发布设置">
+              <a-row :gutter="16">
+                <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
+                <a-col :span="8"><a-form-item label="推荐" name="recommendFlag"><a-switch v-model:checked="formData.recommendFlag" /></a-form-item></a-col>
+                <a-col :span="8"><a-form-item label="允许评论" name="allowComment"><a-switch v-model:checked="formData.allowComment" /></a-form-item></a-col>
+                <a-col :span="8"><a-form-item label="状态" name="status">
+                  <a-select v-model:value="formData.status" allow-clear>
+                    <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                  </a-select>
+                </a-form-item></a-col>
+                <a-col :span="8"><a-form-item label="发布状态" name="publishStatus">
+                  <a-select v-model:value="formData.publishStatus" allow-clear>
+                    <a-select-option v-for="item in publishStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                  </a-select>
+                </a-form-item></a-col>
+                <a-col :span="8"><a-form-item label="审核状态" name="auditStatus">
+                  <a-select v-model:value="formData.auditStatus" allow-clear>
+                    <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                  </a-select>
+                </a-form-item></a-col>
+              </a-row>
+            </a-tab-pane>
 
-        <a-tab-pane key="content" tab="正文">
-          <a-row :gutter="16">
-            <a-col :span="24"><a-form-item label="正文" name="contentHtml">
-              <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="460" />
-            </a-form-item></a-col>
-          </a-row>
-        </a-tab-pane>
-      </a-tabs>
+            <a-tab-pane key="content" tab="正文">
+              <a-row :gutter="16">
+                <a-col :span="24"><a-form-item label="正文" name="contentHtml">
+                  <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="460" />
+                </a-form-item></a-col>
+              </a-row>
+            </a-tab-pane>
+          </a-tabs>
+        </div>
+
+        <div class="content-info-editor-preview">
+          <div class="content-info-phone-preview">
+            <div class="content-info-phone-shell">
+              <div class="content-info-phone-notch"></div>
+              <div class="content-info-phone-screen">
+                <TipTapViewer :content="formData.contentHtml" empty-text="暂无正文" :show-empty="true" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </a-form>
   </a-modal>
 </template>
@@ -359,5 +375,72 @@ onMounted(() => {
 
 .content-info-fullscreen-modal .ant-modal-body .ant-tabs-nav {
   margin-bottom: 12px;
+}
+
+.content-info-editor-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.content-info-editor-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.content-info-editor-preview {
+  width: 380px;
+  flex: none;
+}
+
+.content-info-phone-preview {
+  position: sticky;
+  top: 12px;
+}
+
+.content-info-phone-shell {
+  width: 360px;
+  height: calc(100vh - 168px);
+  max-height: 780px;
+  background: #0b0f19;
+  border-radius: 36px;
+  padding: 14px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.18);
+}
+
+.content-info-phone-notch {
+  width: 120px;
+  height: 18px;
+  background: #0b0f19;
+  border-radius: 0 0 14px 14px;
+  margin: 0 auto 10px;
+}
+
+.content-info-phone-screen {
+  background: #ffffff;
+  border-radius: 26px;
+  height: calc(100% - 28px);
+  overflow: auto;
+  padding: 14px 12px;
+}
+
+@media (max-width: 1200px) {
+  .content-info-editor-layout {
+    flex-direction: column;
+  }
+
+  .content-info-editor-preview {
+    width: 100%;
+  }
+
+  .content-info-phone-preview {
+    position: static;
+  }
+
+  .content-info-phone-shell {
+    width: min(360px, 100%);
+    height: 540px;
+    margin: 0 auto;
+  }
 }
 </style>
