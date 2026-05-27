@@ -65,7 +65,16 @@
       </div>
     </div>
 
-    <a-modal v-model:open="modalVisible" :title="isEdit ? '编辑内容' : '新增内容'" width="900px" :destroy-on-close="true" @cancel="handleCancel" @ok="handleSubmit" :confirm-loading="submitLoading">
+    <a-modal
+      v-model:open="modalVisible"
+      :title="isEdit ? '编辑内容' : '新增内容'"
+      width="100vw"
+      wrap-class-name="content-info-fullscreen-modal"
+      :destroy-on-close="true"
+      @cancel="handleCancel"
+      @ok="handleSubmit"
+      :confirm-loading="submitLoading"
+    >
       <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
         <a-row :gutter="16">
           <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
@@ -304,3 +313,25 @@ onMounted(() => {
 @import '@/assets/styles/modern-dashboard.css';
 </style>
 
+<style>
+.content-info-fullscreen-modal .ant-modal {
+  top: 0;
+  width: 100vw !important;
+  max-width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.content-info-fullscreen-modal .ant-modal-content {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+}
+
+.content-info-fullscreen-modal .ant-modal-body {
+  flex: 1;
+  overflow: auto;
+}
+</style>
