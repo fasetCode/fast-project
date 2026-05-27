@@ -378,24 +378,20 @@ onMounted(() => {
 }
 
 .content-info-editor-layout {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  position: relative;
 }
 
 .content-info-editor-main {
-  flex: 1;
   min-width: 0;
+  padding-right: 396px;
 }
 
 .content-info-editor-preview {
   width: 380px;
-  flex: none;
-}
-
-.content-info-phone-preview {
-  position: sticky;
-  top: 12px;
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 1001;
 }
 
 .content-info-phone-shell {
@@ -425,16 +421,16 @@ onMounted(() => {
 }
 
 @media (max-width: 1200px) {
-  .content-info-editor-layout {
-    flex-direction: column;
-  }
-
   .content-info-editor-preview {
     width: 100%;
+    position: static;
+    top: auto;
+    right: auto;
+    z-index: auto;
   }
 
-  .content-info-phone-preview {
-    position: static;
+  .content-info-editor-main {
+    padding-right: 0;
   }
 
   .content-info-phone-shell {
