@@ -63,6 +63,12 @@ public class ContentRevisionController {
         return ResultVo.success(contentRevisionService.findPage(query));
     }
 
+    @GetMapping("/latest/{contentId}")
+    @PreAuthorize("@ps.hasPermission('admin:content:revision:page')")
+    public ResultVo<ContentRevisionVo> latest(@PathVariable Long contentId) {
+        return ResultVo.success(contentRevisionService.findLatestByContentId(contentId));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:revision:page')")
     public ResultVo<ContentRevisionVo> get(@PathVariable Long id) {

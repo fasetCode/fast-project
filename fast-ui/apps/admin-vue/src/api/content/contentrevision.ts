@@ -49,6 +49,13 @@ export const getContentRevisionById = (id: number) => {
   })
 }
 
+export const getContentRevisionLatest = (contentId: number) => {
+  return request<ResultVo<ContentRevisionVo>>({
+    url: `/content/revision/latest/${contentId}`,
+    method: 'GET',
+  })
+}
+
 export const createContentRevision = (data: ContentRevisionCreate, requestId?: string) => {
   return request<ResultVo<number>>({
     url: '/content/revision',
@@ -95,4 +102,3 @@ export const getContentRevisionSelectAll = () => {
     method: 'GET',
   })
 }
-

@@ -42,12 +42,25 @@
           :row-selection="{ selectedRowKeys, onChange: onSelectChange }"
           row-key="id"
           size="middle"
-          :scroll="{ x: 1400 }"
+          :scroll="{ x: 1700 }"
           @change="handleTableChange"
           class="elegant-table"
         >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'status'">
+           <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'cover'">
+              <a-image v-if="record.cover" :src="resolveImage(record.cover)" :width="44" :height="44" />
+              <span v-else class="text-secondary">-</span>
+            </template>
+            <template v-else-if="column.key === 'categoryId'">
+              <span>{{ getCategoryName(record.categoryId) }}</span>
+            </template>
+            <template v-else-if="column.key === 'tags'">
+              <template v-if="getTagNames(record.tags).length">
+                <a-tag v-for="t in getTagNames(record.tags)" :key="t">{{ t }}</a-tag>
+              </template>
+              <span v-else class="text-secondary">-</span>
+            </template>
+            <template v-else-if="column.key === 'status'">
               <a-tag :color="record.status === 1 ? 'green' : 'red'">{{ getDictLabel('status', record.status) }}</a-tag>
             </template>
             <template v-else-if="column.key === 'publishStatus'">
@@ -79,10 +92,25 @@
         <a-row :gutter="16">
           <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
           <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
+          <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="分类ID" name="categoryId"><a-input-number v-model:value="formData.categoryId" :min="0" style="width:100%" /></a-form-item></a-col>
-          <a-col :span="12"><a-form-item label="标签" name="tags"><a-input v-model:value="formData.tags" placeholder="逗号分隔" /></a-form-item></a-col>
+          <a-col :span="12"><a-form-item label="分类" name="categoryId">
+            <a-tree-select
+              v-model:value="categoryIdValue"
+              :tree-data="categoryTreeData"
+              :field-names="{ label: 'title', value: 'value', children: 'children' }"
+              allow-clear
+              tree-default-expand-all
+              style="width:100%"
+              placeholder="请选择分类"
+            />
+          </a-form-item></a-col>
+          <a-col :span="12"><a-form-item label="标签" name="tags">
+            <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
+              <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+            </a-select>
+          </a-form-item></a-col>
           <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
           <a-col :span="12"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
           <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
@@ -103,6 +131,9 @@
               <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
             </a-select>
           </a-form-item></a-col>
+          <a-col :span="24"><a-form-item label="正文" name="contentHtml">
+            <TipTapEditor v-model="revisionHtml" placeholder="请输入正文" :min-height="420" />
+          </a-form-item></a-col>
         </a-row>
       </a-form>
     </a-modal>
@@ -116,8 +147,16 @@ import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, EditOutli
 import type { FormInstance } from 'ant-design-vue'
 import type { ContentInfoVo, ContentInfoQuery, ContentInfoCreate, ContentInfoUpdate } from '@/api/content/contentinfo'
 import { getContentInfoPage, getContentInfoById, createContentInfo, updateContentInfo, deleteContentInfo, batchDeleteContentInfo } from '@/api/content/contentinfo'
+import type { ContentCategoryTreeVo } from '@/api/content/contentcategory'
+import { getContentCategoryTree } from '@/api/content/contentcategory'
+import type { ContentTagVo } from '@/api/content/contenttag'
+import { getContentTagSelectAll } from '@/api/content/contenttag'
+import { createContentRevision, getContentRevisionLatest } from '@/api/content/contentrevision'
+import { getFileUrl } from '@/api/file/fileupload'
 import { getRequestId } from '@/utils/idUtils.ts'
 import { getDictData, getDictLabel } from '@/utils/dict.ts'
+import ImageUpload from '@/components/ImageUpload/index.vue'
+import TipTapEditor from '@/components/TipTapEditor/index.vue'
 
 const statusOptions = computed(() => (getDictData('status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
 const publishStatusOptions = computed(() => (getDictData('content_publish_status') || []).map((d: any) => ({ value: Number(d.value), label: d.label })))
@@ -126,8 +165,10 @@ const auditStatusOptions = computed(() => (getDictData('content_audit_status') |
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
   { title: '标题', dataIndex: 'title', key: 'title', width: 260 },
+  { title: '封面', dataIndex: 'cover', key: 'cover', width: 80 },
   { title: '作者', dataIndex: 'authorName', key: 'authorName', width: 140 },
-  { title: '分类ID', dataIndex: 'categoryId', key: 'categoryId', width: 100 },
+  { title: '分类', dataIndex: 'categoryId', key: 'categoryId', width: 160 },
+  { title: '标签', dataIndex: 'tags', key: 'tags', width: 220 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
   { title: '发布状态', dataIndex: 'publishStatus', key: 'publishStatus', width: 120 },
   { title: '审核状态', dataIndex: 'auditStatus', key: 'auditStatus', width: 120 },
@@ -140,6 +181,13 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const dataSource = ref<ContentInfoVo[]>([])
 const selectedRowKeys = ref<number[]>([])
+
+const resolveImage = (val: any) => {
+  if (!val) return ''
+  const str = String(val)
+  if (str.startsWith('http') || str.startsWith('/')) return str
+  return getFileUrl(val)
+}
 
 const queryParams = reactive<ContentInfoQuery>({
   page: 1,
@@ -177,8 +225,110 @@ const formData = reactive<ContentInfoFormData>({
   auditStatus: undefined,
 })
 
+type TreeSelectNode = { title: string; value: string; children?: TreeSelectNode[] }
+const categoryTree = ref<ContentCategoryTreeVo[]>([])
+const categoryTreeData = computed<TreeSelectNode[]>(() => buildCategoryTreeSelect(categoryTree.value))
+const categoryIdValue = ref<string | undefined>(undefined)
+
+const tagList = ref<ContentTagVo[]>([])
+const tagSelectOptions = computed(() =>
+  (tagList.value || [])
+    .filter((t) => t && t.id !== undefined && t.id !== null)
+    .map((t) => ({ value: Number(t.id), label: t.name || String(t.id) }))
+)
+const selectedTagIds = ref<number[]>([])
+
+const revisionHtml = ref('')
+const originRevisionHtml = ref('')
+const latestRevisionVersion = ref(0)
+
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
+}
+
+const toIdString = (value: any): string | undefined => {
+  if (value === null || value === undefined || value === '') return undefined
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'bigint') return String(value)
+  if (typeof value === 'object' && typeof value.toString === 'function') {
+    const s = value.toString()
+    if (s && s !== '[object Object]') return s
+  }
+  return String(value)
+}
+
+const normalizeCategoryTree = (nodes: any[] | undefined): ContentCategoryTreeVo[] => {
+  if (!nodes?.length) return []
+  return nodes.map((n) => ({
+    ...n,
+    id: toIdString(n.id),
+    parentId: toIdString(n.parentId),
+    children: normalizeCategoryTree(n.children),
+  }))
+}
+
+const buildCategoryTreeSelect = (nodes: ContentCategoryTreeVo[] | undefined): TreeSelectNode[] => {
+  if (!nodes?.length) return []
+  return nodes.map((n) => ({
+    title: n.name || `${n.id}`,
+    value: String(n.id),
+    children: buildCategoryTreeSelect(n.children),
+  }))
+}
+
+const getCategoryName = (categoryId: any) => {
+  if (categoryId === null || categoryId === undefined || categoryId === '') return '-'
+  const idStr = String(categoryId)
+  const found = findCategoryNodeById(categoryTree.value, idStr)
+  return found?.name || idStr
+}
+
+const findCategoryNodeById = (nodes: ContentCategoryTreeVo[] | undefined, id: string): ContentCategoryTreeVo | undefined => {
+  if (!nodes?.length) return undefined
+  for (const n of nodes) {
+    if (String(n.id) === id) return n
+    const child = findCategoryNodeById(n.children, id)
+    if (child) return child
+  }
+  return undefined
+}
+
+const parseTagIds = (val: any): number[] => {
+  if (!val) return []
+  return String(val)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => Number(s))
+    .filter((n) => Number.isFinite(n))
+}
+
+const getTagNames = (val: any): string[] => {
+  const ids = parseTagIds(val)
+  if (!ids.length) return []
+  const map = new Map((tagList.value || []).map((t) => [Number(t.id), t.name || String(t.id)]))
+  return ids.map((id) => map.get(id) || String(id))
+}
+
+const stripHtml = (html: string) => {
+  if (!html) return ''
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+const loadMeta = async () => {
+  const [catRes, tagRes] = await Promise.all([getContentCategoryTree(), getContentTagSelectAll()])
+  if (catRes.code === 200) {
+    categoryTree.value = normalizeCategoryTree(catRes.data || [])
+  }
+  if (tagRes.code === 200) {
+    tagList.value = tagRes.data || []
+  }
 }
 
 const loadData = async () => {
@@ -234,6 +384,11 @@ const handleAdd = () => {
     publishStatus: undefined,
     auditStatus: undefined,
   })
+  categoryIdValue.value = undefined
+  selectedTagIds.value = []
+  revisionHtml.value = ''
+  originRevisionHtml.value = ''
+  latestRevisionVersion.value = 0
   modalVisible.value = true
 }
 
@@ -243,7 +398,46 @@ const handleEdit = async (record: ContentInfoVo) => {
   if (res.code === 200) {
     Object.assign(formData, res.data)
   }
+  categoryIdValue.value = formData.categoryId !== undefined && formData.categoryId !== null ? String(formData.categoryId) : undefined
+  selectedTagIds.value = parseTagIds(formData.tags)
+
+  const revRes: any = await getContentRevisionLatest(record.id!)
+  if (revRes.code === 200 && revRes.data) {
+    revisionHtml.value = revRes.data.contentHtml || revRes.data.content || ''
+    originRevisionHtml.value = revisionHtml.value
+    latestRevisionVersion.value = Number(revRes.data.version || 0)
+  } else {
+    revisionHtml.value = ''
+    originRevisionHtml.value = ''
+    latestRevisionVersion.value = 0
+  }
   modalVisible.value = true
+}
+
+const saveRevisionIfNeeded = async (contentId: number, requestId: string) => {
+  const html = revisionHtml.value || ''
+  const changed = html !== (originRevisionHtml.value || '')
+  const shouldSave = isEdit.value ? changed : Boolean(html.trim())
+  if (!shouldSave) return
+
+  const text = stripHtml(html)
+  const res: any = await createContentRevision(
+    {
+      contentId,
+      version: (latestRevisionVersion.value || 0) + 1,
+      format: 'html',
+      content: text,
+      contentHtml: html,
+      wordCount: text.length,
+    },
+    requestId
+  )
+
+  if (res.code !== 200) {
+    throw new Error(res.msg || '保存正文失败')
+  }
+  originRevisionHtml.value = html
+  latestRevisionVersion.value = (latestRevisionVersion.value || 0) + 1
 }
 
 const handleSubmit = async () => {
@@ -251,11 +445,16 @@ const handleSubmit = async () => {
     await formRef.value?.validate()
     submitLoading.value = true
     const reqId = getRequestId()
-    const payload = { ...formData }
+    const payload: any = { ...formData }
+    payload.categoryId = categoryIdValue.value ? Number(categoryIdValue.value) : undefined
+    payload.tags = selectedTagIds.value?.length ? selectedTagIds.value.join(',') : ''
+
     const res: any = isEdit.value
       ? await updateContentInfo(payload as ContentInfoUpdate, reqId)
-      : await createContentInfo(payload, reqId)
+      : await createContentInfo(payload as ContentInfoCreate, reqId)
     if (res.code === 200) {
+      const contentId = isEdit.value ? Number(formData.id) : Number(res.data)
+      await saveRevisionIfNeeded(contentId, reqId)
       message.success(isEdit.value ? '更新成功' : '创建成功')
       modalVisible.value = false
       loadData()
@@ -305,7 +504,7 @@ const handleDelete = () => {
 }
 
 onMounted(() => {
-  loadData()
+  loadMeta().finally(() => loadData())
 })
 </script>
 

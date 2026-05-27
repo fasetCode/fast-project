@@ -19,6 +19,8 @@ public interface ContentRevisionService {
 
     ContentRevisionVo findById(Long id);
 
+    ContentRevisionVo findLatestByContentId(Long contentId);
+
     PageVo<List<ContentRevisionVo>> findPage(ContentRevisionQuery query);
 
     List<ContentRevisionVo> findAll();

@@ -61,6 +61,15 @@ public class ContentRevisionServiceImpl implements ContentRevisionService {
     }
 
     @Override
+    public ContentRevisionVo findLatestByContentId(Long contentId) {
+        if (contentId == null) {
+            return null;
+        }
+        ContentRevision entity = repository.findTopByContentIdOrderByVersionDescIdDesc(contentId);
+        return entity != null ? mapper.toVo(entity) : null;
+    }
+
+    @Override
     public PageVo<List<ContentRevisionVo>> findPage(ContentRevisionQuery query) {
         Pageable pageable = PageRequest.of(query.getPage(), query.getPageSize(), Sort.by("id").descending());
         Page<ContentRevision> page = repository.findAll(pageable);
