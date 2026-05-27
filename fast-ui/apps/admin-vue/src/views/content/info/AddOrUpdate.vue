@@ -49,7 +49,7 @@ const formData = reactive<ContentInfoFormData>({
   readingTime: 0,
   categoryIds: [],
   tagIds: [],
-  authorId: undefined,
+  authorId: undefined as any,
   authorName: '',
   source: '',
   sourceUrl: '',
@@ -89,7 +89,7 @@ const getDefaultFormData = (): ContentInfoFormData => ({
   readingTime: 0,
   categoryIds: [],
   tagIds: [],
-  authorId: undefined,
+  authorId: undefined as any,
   authorName: '',
   source: '',
   sourceUrl: '',
@@ -193,6 +193,7 @@ const openForEdit = async (id: number) => {
   Object.assign(formData, {
     ...getDefaultFormData(),
     ...res.data,
+    authorId: toIdString(res.data?.authorId) as any,
     categoryIds: normalizeCategoryIds(res.data?.categoryIds),
     tagIds: normalizeTagIds(res.data?.tagIds),
   })

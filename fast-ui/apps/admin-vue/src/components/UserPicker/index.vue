@@ -33,7 +33,7 @@
       </div>
 
       <a-table
-        row-key="id"
+        :row-key="rowKey"
         :data-source="userList"
         :columns="columns"
         :loading="loading"
@@ -50,10 +50,10 @@
 import { computed, reactive, ref, watch } from 'vue'
 import request from '@/utils/axios'
 
-type ModelValue = number | number[] | null | undefined
+type ModelValue = string | string[] | number | number[] | null | undefined
 
 interface UserPickerVo {
-  id?: number
+  id?: string
   username: string
   nickname: string
   email?: string
@@ -80,7 +80,7 @@ const getPickerPage = (data: { page: number; pageSize: number; keyword?: string 
   })
 }
 
-const getPickerById = (id: number) => {
+const getPickerById = (id: string) => {
   return request<ResultVo<UserPickerVo>>({
     url: `/sys/users/picker/${id}`,
     method: 'GET',
@@ -117,7 +117,7 @@ const query = reactive({
   pageSize: props.limit,
 })
 
-const selectedRowKeys = ref<(string | number)[]>([])
+const selectedRowKeys = ref<string[]>([])
 const selectedStore = reactive<Record<string, UserPickerVo>>({})
 
 const columns = [
@@ -127,12 +127,23 @@ const columns = [
   { title: '手机号', dataIndex: 'phone', key: 'phone', width: 140 },
 ]
 
-const normalizeIds = (val: ModelValue): number[] => {
-  if (Array.isArray(val)) {
-    return val.map((v) => Number(v)).filter((v) => Number.isFinite(v))
+const normalizeId = (val: any): string | undefined => {
+  if (val === null || val === undefined || val === '') return undefined
+  if (typeof val === 'string') return val
+  if (typeof val === 'number' || typeof val === 'bigint') return String(val)
+  if (typeof val === 'object' && typeof val.toString === 'function') {
+    const str = val.toString()
+    if (str && str !== '[object Object]') return str
   }
-  const id = Number(val)
-  return Number.isFinite(id) ? [id] : []
+  return String(val)
+}
+
+const normalizeIds = (val: ModelValue): string[] => {
+  if (Array.isArray(val)) {
+    return val.map((v) => normalizeId(v)).filter(Boolean) as string[]
+  }
+  const id = normalizeId(val)
+  return id ? [id] : []
 }
 
 const syncSelectedFromProps = async () => {
@@ -146,7 +157,7 @@ const syncSelectedFromProps = async () => {
     needFetch.slice(0, 20).map(async (id) => {
       try {
         const res = await getPickerById(id)
-        if (res.code === 200) return res.data
+        if (res.code === 200) return res.data ? { ...res.data, id: normalizeId((res.data as any).id) } : undefined
       } catch {
         return undefined
       }
@@ -155,7 +166,7 @@ const syncSelectedFromProps = async () => {
   )
   resList.filter(Boolean).forEach((u) => {
     if (u?.id !== undefined && u?.id !== null) {
-      selectedStore[String(u.id)] = u
+      selectedStore[String(u.id)] = u as any
     }
   })
 }
@@ -163,6 +174,8 @@ const syncSelectedFromProps = async () => {
 watch(() => props.value, () => {
   syncSelectedFromProps()
 }, { immediate: true })
+
+const rowKey = (record: UserPickerVo) => record.id || ''
 
 const selectedUsers = computed(() => {
   return selectedRowKeys.value
@@ -193,10 +206,12 @@ const rowSelection = computed(() => ({
   type: props.multiple ? 'checkbox' : 'radio',
   selectedRowKeys: selectedRowKeys.value,
   onChange: (keys: (string | number)[], rows: UserPickerVo[]) => {
-    const nextKeys = props.multiple ? keys : keys.slice(0, 1)
+    const normalizedKeys = keys.map((k) => normalizeId(k)).filter(Boolean) as string[]
+    const nextKeys = props.multiple ? normalizedKeys : normalizedKeys.slice(0, 1)
     rows.forEach((row) => {
-      if (row?.id !== undefined && row?.id !== null) {
-        selectedStore[String(row.id)] = row
+      const id = normalizeId((row as any).id)
+      if (id) {
+        selectedStore[id] = { ...row, id }
       }
     })
     nextKeys.forEach((k) => {
@@ -223,7 +238,7 @@ const fetchPage = async () => {
       keyword: keyword.value || undefined,
     })
     if (res.code === 200) {
-      userList.value = res.data?.data || []
+      userList.value = (res.data?.data || []).map((u: any) => ({ ...u, id: normalizeId(u.id) }))
       total.value = res.data?.total || 0
     }
   } finally {
@@ -261,15 +276,14 @@ const handleOk = () => {
   if (!selectedRowKeys.value.length) return
 
   if (props.multiple) {
-    const ids = selectedRowKeys.value.map((k) => Number(k)).filter((v) => Number.isFinite(v))
+    const ids = selectedRowKeys.value
     emit('update:value', ids)
     emit('change', ids)
     emit('select', selectedUsers.value)
   } else {
-    const id = Number(selectedRowKeys.value[0])
-    const nextValue = Number.isFinite(id) ? id : undefined
-    emit('update:value', nextValue)
-    emit('change', nextValue)
+    const id = selectedRowKeys.value[0]
+    emit('update:value', id)
+    emit('change', id)
     emit('select', selectedUsers.value[0] || null)
   }
   modalOpen.value = false
