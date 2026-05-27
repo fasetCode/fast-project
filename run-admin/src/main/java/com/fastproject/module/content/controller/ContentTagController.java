@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentTag;
 import com.fastproject.content.service.ContentTagService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.tag.ContentTagCreate;
+import com.fastproject.content.vo.tag.ContentTagQuery;
+import com.fastproject.content.vo.tag.ContentTagUpdate;
+import com.fastproject.content.vo.tag.ContentTagVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentTagController {
     @PreAuthorize("@ps.hasPermission('admin:content:tag:add')")
     @Log(value = "添加标签", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:tag:", expireTime = 120, title = "添加标签")
-    public ResultVo<Long> add(@RequestBody ContentTag contentTag) {
-        return ResultVo.success(contentTagService.save(contentTag));
+    public ResultVo<Long> add(@RequestBody ContentTagCreate create) {
+        return ResultVo.success(contentTagService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:tag:update')")
     @Log(value = "修改标签", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:tag:", expireTime = 120, title = "修改标签")
-    public ResultVo<Object> update(@RequestBody ContentTag contentTag) {
-        contentTagService.update(contentTag);
+    public ResultVo<Object> update(@RequestBody ContentTagUpdate update) {
+        contentTagService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentTagController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:tag:page')")
-    public ResultVo<PageVo<List<ContentTag>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentTagVo>>> page(@RequestBody ContentTagQuery query) {
         return ResultVo.success(contentTagService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:tag:page')")
-    public ResultVo<ContentTag> get(@PathVariable Long id) {
+    public ResultVo<ContentTagVo> get(@PathVariable Long id) {
         return ResultVo.success(contentTagService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:tag:page')")
-    public ResultVo<List<ContentTag>> list() {
+    public ResultVo<List<ContentTagVo>> list() {
         return ResultVo.success(contentTagService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentTag>> selectAll() {
+    public ResultVo<List<ContentTagVo>> selectAll() {
         return ResultVo.success(contentTagService.selectAll());
     }
 }
-

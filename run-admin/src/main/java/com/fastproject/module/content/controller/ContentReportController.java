@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentReport;
 import com.fastproject.content.service.ContentReportService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.report.ContentReportCreate;
+import com.fastproject.content.vo.report.ContentReportQuery;
+import com.fastproject.content.vo.report.ContentReportUpdate;
+import com.fastproject.content.vo.report.ContentReportVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentReportController {
     @PreAuthorize("@ps.hasPermission('admin:content:report:add')")
     @Log(value = "添加举报", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:report:", expireTime = 120, title = "添加举报")
-    public ResultVo<Long> add(@RequestBody ContentReport contentReport) {
-        return ResultVo.success(contentReportService.save(contentReport));
+    public ResultVo<Long> add(@RequestBody ContentReportCreate create) {
+        return ResultVo.success(contentReportService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:report:update')")
     @Log(value = "修改举报", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:report:", expireTime = 120, title = "修改举报")
-    public ResultVo<Object> update(@RequestBody ContentReport contentReport) {
-        contentReportService.update(contentReport);
+    public ResultVo<Object> update(@RequestBody ContentReportUpdate update) {
+        contentReportService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentReportController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:report:page')")
-    public ResultVo<PageVo<List<ContentReport>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentReportVo>>> page(@RequestBody ContentReportQuery query) {
         return ResultVo.success(contentReportService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:report:page')")
-    public ResultVo<ContentReport> get(@PathVariable Long id) {
+    public ResultVo<ContentReportVo> get(@PathVariable Long id) {
         return ResultVo.success(contentReportService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:report:page')")
-    public ResultVo<List<ContentReport>> list() {
+    public ResultVo<List<ContentReportVo>> list() {
         return ResultVo.success(contentReportService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentReport>> selectAll() {
+    public ResultVo<List<ContentReportVo>> selectAll() {
         return ResultVo.success(contentReportService.selectAll());
     }
 }
-

@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentCategoryRel;
 import com.fastproject.content.service.ContentCategoryRelService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.categoryrel.ContentCategoryRelCreate;
+import com.fastproject.content.vo.categoryrel.ContentCategoryRelQuery;
+import com.fastproject.content.vo.categoryrel.ContentCategoryRelUpdate;
+import com.fastproject.content.vo.categoryrel.ContentCategoryRelVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentCategoryRelController {
     @PreAuthorize("@ps.hasPermission('admin:content:categoryRel:add')")
     @Log(value = "添加内容分类关联", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:categoryRel:", expireTime = 120, title = "添加内容分类关联")
-    public ResultVo<Long> add(@RequestBody ContentCategoryRel contentCategoryRel) {
-        return ResultVo.success(contentCategoryRelService.save(contentCategoryRel));
+    public ResultVo<Long> add(@RequestBody ContentCategoryRelCreate create) {
+        return ResultVo.success(contentCategoryRelService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:categoryRel:update')")
     @Log(value = "修改内容分类关联", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:categoryRel:", expireTime = 120, title = "修改内容分类关联")
-    public ResultVo<Object> update(@RequestBody ContentCategoryRel contentCategoryRel) {
-        contentCategoryRelService.update(contentCategoryRel);
+    public ResultVo<Object> update(@RequestBody ContentCategoryRelUpdate update) {
+        contentCategoryRelService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentCategoryRelController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:categoryRel:page')")
-    public ResultVo<PageVo<List<ContentCategoryRel>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentCategoryRelVo>>> page(@RequestBody ContentCategoryRelQuery query) {
         return ResultVo.success(contentCategoryRelService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:categoryRel:page')")
-    public ResultVo<ContentCategoryRel> get(@PathVariable Long id) {
+    public ResultVo<ContentCategoryRelVo> get(@PathVariable Long id) {
         return ResultVo.success(contentCategoryRelService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:categoryRel:page')")
-    public ResultVo<List<ContentCategoryRel>> list() {
+    public ResultVo<List<ContentCategoryRelVo>> list() {
         return ResultVo.success(contentCategoryRelService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentCategoryRel>> selectAll() {
+    public ResultVo<List<ContentCategoryRelVo>> selectAll() {
         return ResultVo.success(contentCategoryRelService.selectAll());
     }
 }
-

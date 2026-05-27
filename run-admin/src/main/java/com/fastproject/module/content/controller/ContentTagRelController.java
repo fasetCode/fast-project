@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentTagRel;
 import com.fastproject.content.service.ContentTagRelService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.tagrel.ContentTagRelCreate;
+import com.fastproject.content.vo.tagrel.ContentTagRelQuery;
+import com.fastproject.content.vo.tagrel.ContentTagRelUpdate;
+import com.fastproject.content.vo.tagrel.ContentTagRelVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentTagRelController {
     @PreAuthorize("@ps.hasPermission('admin:content:tagRel:add')")
     @Log(value = "添加内容标签关联", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:tagRel:", expireTime = 120, title = "添加内容标签关联")
-    public ResultVo<Long> add(@RequestBody ContentTagRel contentTagRel) {
-        return ResultVo.success(contentTagRelService.save(contentTagRel));
+    public ResultVo<Long> add(@RequestBody ContentTagRelCreate create) {
+        return ResultVo.success(contentTagRelService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:tagRel:update')")
     @Log(value = "修改内容标签关联", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:tagRel:", expireTime = 120, title = "修改内容标签关联")
-    public ResultVo<Object> update(@RequestBody ContentTagRel contentTagRel) {
-        contentTagRelService.update(contentTagRel);
+    public ResultVo<Object> update(@RequestBody ContentTagRelUpdate update) {
+        contentTagRelService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentTagRelController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:tagRel:page')")
-    public ResultVo<PageVo<List<ContentTagRel>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentTagRelVo>>> page(@RequestBody ContentTagRelQuery query) {
         return ResultVo.success(contentTagRelService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:tagRel:page')")
-    public ResultVo<ContentTagRel> get(@PathVariable Long id) {
+    public ResultVo<ContentTagRelVo> get(@PathVariable Long id) {
         return ResultVo.success(contentTagRelService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:tagRel:page')")
-    public ResultVo<List<ContentTagRel>> list() {
+    public ResultVo<List<ContentTagRelVo>> list() {
         return ResultVo.success(contentTagRelService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentTagRel>> selectAll() {
+    public ResultVo<List<ContentTagRelVo>> selectAll() {
         return ResultVo.success(contentTagRelService.selectAll());
     }
 }
-

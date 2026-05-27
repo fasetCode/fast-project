@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentCommentLike;
 import com.fastproject.content.service.ContentCommentLikeService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.commentlike.ContentCommentLikeCreate;
+import com.fastproject.content.vo.commentlike.ContentCommentLikeQuery;
+import com.fastproject.content.vo.commentlike.ContentCommentLikeUpdate;
+import com.fastproject.content.vo.commentlike.ContentCommentLikeVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentCommentLikeController {
     @PreAuthorize("@ps.hasPermission('admin:content:commentLike:add')")
     @Log(value = "添加评论点赞记录", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:commentLike:", expireTime = 120, title = "添加评论点赞记录")
-    public ResultVo<Long> add(@RequestBody ContentCommentLike contentCommentLike) {
-        return ResultVo.success(contentCommentLikeService.save(contentCommentLike));
+    public ResultVo<Long> add(@RequestBody ContentCommentLikeCreate create) {
+        return ResultVo.success(contentCommentLikeService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:commentLike:update')")
     @Log(value = "修改评论点赞记录", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:commentLike:", expireTime = 120, title = "修改评论点赞记录")
-    public ResultVo<Object> update(@RequestBody ContentCommentLike contentCommentLike) {
-        contentCommentLikeService.update(contentCommentLike);
+    public ResultVo<Object> update(@RequestBody ContentCommentLikeUpdate update) {
+        contentCommentLikeService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentCommentLikeController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:commentLike:page')")
-    public ResultVo<PageVo<List<ContentCommentLike>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentCommentLikeVo>>> page(@RequestBody ContentCommentLikeQuery query) {
         return ResultVo.success(contentCommentLikeService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:commentLike:page')")
-    public ResultVo<ContentCommentLike> get(@PathVariable Long id) {
+    public ResultVo<ContentCommentLikeVo> get(@PathVariable Long id) {
         return ResultVo.success(contentCommentLikeService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:commentLike:page')")
-    public ResultVo<List<ContentCommentLike>> list() {
+    public ResultVo<List<ContentCommentLikeVo>> list() {
         return ResultVo.success(contentCommentLikeService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentCommentLike>> selectAll() {
+    public ResultVo<List<ContentCommentLikeVo>> selectAll() {
         return ResultVo.success(contentCommentLikeService.selectAll());
     }
 }
-

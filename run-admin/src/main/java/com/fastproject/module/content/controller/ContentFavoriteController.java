@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentFavorite;
 import com.fastproject.content.service.ContentFavoriteService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.favorite.ContentFavoriteCreate;
+import com.fastproject.content.vo.favorite.ContentFavoriteQuery;
+import com.fastproject.content.vo.favorite.ContentFavoriteUpdate;
+import com.fastproject.content.vo.favorite.ContentFavoriteVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentFavoriteController {
     @PreAuthorize("@ps.hasPermission('admin:content:favorite:add')")
     @Log(value = "添加收藏记录", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:favorite:", expireTime = 120, title = "添加收藏记录")
-    public ResultVo<Long> add(@RequestBody ContentFavorite contentFavorite) {
-        return ResultVo.success(contentFavoriteService.save(contentFavorite));
+    public ResultVo<Long> add(@RequestBody ContentFavoriteCreate create) {
+        return ResultVo.success(contentFavoriteService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:favorite:update')")
     @Log(value = "修改收藏记录", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:favorite:", expireTime = 120, title = "修改收藏记录")
-    public ResultVo<Object> update(@RequestBody ContentFavorite contentFavorite) {
-        contentFavoriteService.update(contentFavorite);
+    public ResultVo<Object> update(@RequestBody ContentFavoriteUpdate update) {
+        contentFavoriteService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentFavoriteController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:favorite:page')")
-    public ResultVo<PageVo<List<ContentFavorite>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentFavoriteVo>>> page(@RequestBody ContentFavoriteQuery query) {
         return ResultVo.success(contentFavoriteService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:favorite:page')")
-    public ResultVo<ContentFavorite> get(@PathVariable Long id) {
+    public ResultVo<ContentFavoriteVo> get(@PathVariable Long id) {
         return ResultVo.success(contentFavoriteService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:favorite:page')")
-    public ResultVo<List<ContentFavorite>> list() {
+    public ResultVo<List<ContentFavoriteVo>> list() {
         return ResultVo.success(contentFavoriteService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentFavorite>> selectAll() {
+    public ResultVo<List<ContentFavoriteVo>> selectAll() {
         return ResultVo.success(contentFavoriteService.selectAll());
     }
 }
-

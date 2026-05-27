@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentLike;
 import com.fastproject.content.service.ContentLikeService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.like.ContentLikeCreate;
+import com.fastproject.content.vo.like.ContentLikeQuery;
+import com.fastproject.content.vo.like.ContentLikeUpdate;
+import com.fastproject.content.vo.like.ContentLikeVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentLikeController {
     @PreAuthorize("@ps.hasPermission('admin:content:like:add')")
     @Log(value = "添加点赞记录", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:like:", expireTime = 120, title = "添加点赞记录")
-    public ResultVo<Long> add(@RequestBody ContentLike contentLike) {
-        return ResultVo.success(contentLikeService.save(contentLike));
+    public ResultVo<Long> add(@RequestBody ContentLikeCreate create) {
+        return ResultVo.success(contentLikeService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:like:update')")
     @Log(value = "修改点赞记录", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:like:", expireTime = 120, title = "修改点赞记录")
-    public ResultVo<Object> update(@RequestBody ContentLike contentLike) {
-        contentLikeService.update(contentLike);
+    public ResultVo<Object> update(@RequestBody ContentLikeUpdate update) {
+        contentLikeService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentLikeController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:like:page')")
-    public ResultVo<PageVo<List<ContentLike>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentLikeVo>>> page(@RequestBody ContentLikeQuery query) {
         return ResultVo.success(contentLikeService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:like:page')")
-    public ResultVo<ContentLike> get(@PathVariable Long id) {
+    public ResultVo<ContentLikeVo> get(@PathVariable Long id) {
         return ResultVo.success(contentLikeService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:like:page')")
-    public ResultVo<List<ContentLike>> list() {
+    public ResultVo<List<ContentLikeVo>> list() {
         return ResultVo.success(contentLikeService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentLike>> selectAll() {
+    public ResultVo<List<ContentLikeVo>> selectAll() {
         return ResultVo.success(contentLikeService.selectAll());
     }
 }
-

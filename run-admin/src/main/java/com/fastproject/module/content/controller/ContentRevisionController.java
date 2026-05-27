@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentRevision;
 import com.fastproject.content.service.ContentRevisionService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.revision.ContentRevisionCreate;
+import com.fastproject.content.vo.revision.ContentRevisionQuery;
+import com.fastproject.content.vo.revision.ContentRevisionUpdate;
+import com.fastproject.content.vo.revision.ContentRevisionVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentRevisionController {
     @PreAuthorize("@ps.hasPermission('admin:content:revision:add')")
     @Log(value = "添加修订记录", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:revision:", expireTime = 120, title = "添加修订记录")
-    public ResultVo<Long> add(@RequestBody ContentRevision contentRevision) {
-        return ResultVo.success(contentRevisionService.save(contentRevision));
+    public ResultVo<Long> add(@RequestBody ContentRevisionCreate create) {
+        return ResultVo.success(contentRevisionService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:revision:update')")
     @Log(value = "修改修订记录", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:revision:", expireTime = 120, title = "修改修订记录")
-    public ResultVo<Object> update(@RequestBody ContentRevision contentRevision) {
-        contentRevisionService.update(contentRevision);
+    public ResultVo<Object> update(@RequestBody ContentRevisionUpdate update) {
+        contentRevisionService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentRevisionController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:revision:page')")
-    public ResultVo<PageVo<List<ContentRevision>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentRevisionVo>>> page(@RequestBody ContentRevisionQuery query) {
         return ResultVo.success(contentRevisionService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:revision:page')")
-    public ResultVo<ContentRevision> get(@PathVariable Long id) {
+    public ResultVo<ContentRevisionVo> get(@PathVariable Long id) {
         return ResultVo.success(contentRevisionService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:revision:page')")
-    public ResultVo<List<ContentRevision>> list() {
+    public ResultVo<List<ContentRevisionVo>> list() {
         return ResultVo.success(contentRevisionService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentRevision>> selectAll() {
+    public ResultVo<List<ContentRevisionVo>> selectAll() {
         return ResultVo.success(contentRevisionService.selectAll());
     }
 }
-

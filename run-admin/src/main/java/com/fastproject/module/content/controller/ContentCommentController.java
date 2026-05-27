@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentComment;
 import com.fastproject.content.service.ContentCommentService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.comment.ContentCommentCreate;
+import com.fastproject.content.vo.comment.ContentCommentQuery;
+import com.fastproject.content.vo.comment.ContentCommentUpdate;
+import com.fastproject.content.vo.comment.ContentCommentVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentCommentController {
     @PreAuthorize("@ps.hasPermission('admin:content:comment:add')")
     @Log(value = "添加评论", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:comment:", expireTime = 120, title = "添加评论")
-    public ResultVo<Long> add(@RequestBody ContentComment contentComment) {
-        return ResultVo.success(contentCommentService.save(contentComment));
+    public ResultVo<Long> add(@RequestBody ContentCommentCreate create) {
+        return ResultVo.success(contentCommentService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:comment:update')")
     @Log(value = "修改评论", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:comment:", expireTime = 120, title = "修改评论")
-    public ResultVo<Object> update(@RequestBody ContentComment contentComment) {
-        contentCommentService.update(contentComment);
+    public ResultVo<Object> update(@RequestBody ContentCommentUpdate update) {
+        contentCommentService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentCommentController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:comment:page')")
-    public ResultVo<PageVo<List<ContentComment>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentCommentVo>>> page(@RequestBody ContentCommentQuery query) {
         return ResultVo.success(contentCommentService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:comment:page')")
-    public ResultVo<ContentComment> get(@PathVariable Long id) {
+    public ResultVo<ContentCommentVo> get(@PathVariable Long id) {
         return ResultVo.success(contentCommentService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:comment:page')")
-    public ResultVo<List<ContentComment>> list() {
+    public ResultVo<List<ContentCommentVo>> list() {
         return ResultVo.success(contentCommentService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentComment>> selectAll() {
+    public ResultVo<List<ContentCommentVo>> selectAll() {
         return ResultVo.success(contentCommentService.selectAll());
     }
 }
-

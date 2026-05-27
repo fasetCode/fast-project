@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentBody;
 import com.fastproject.content.service.ContentBodyService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.body.ContentBodyCreate;
+import com.fastproject.content.vo.body.ContentBodyQuery;
+import com.fastproject.content.vo.body.ContentBodyUpdate;
+import com.fastproject.content.vo.body.ContentBodyVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentBodyController {
     @PreAuthorize("@ps.hasPermission('admin:content:body:add')")
     @Log(value = "添加内容正文", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:body:", expireTime = 120, title = "添加内容正文")
-    public ResultVo<Long> add(@RequestBody ContentBody contentBody) {
-        return ResultVo.success(contentBodyService.save(contentBody));
+    public ResultVo<Long> add(@RequestBody ContentBodyCreate create) {
+        return ResultVo.success(contentBodyService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:body:update')")
     @Log(value = "修改内容正文", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:body:", expireTime = 120, title = "修改内容正文")
-    public ResultVo<Object> update(@RequestBody ContentBody contentBody) {
-        contentBodyService.update(contentBody);
+    public ResultVo<Object> update(@RequestBody ContentBodyUpdate update) {
+        contentBodyService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentBodyController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:body:page')")
-    public ResultVo<PageVo<List<ContentBody>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentBodyVo>>> page(@RequestBody ContentBodyQuery query) {
         return ResultVo.success(contentBodyService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:body:page')")
-    public ResultVo<ContentBody> get(@PathVariable Long id) {
+    public ResultVo<ContentBodyVo> get(@PathVariable Long id) {
         return ResultVo.success(contentBodyService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:body:page')")
-    public ResultVo<List<ContentBody>> list() {
+    public ResultVo<List<ContentBodyVo>> list() {
         return ResultVo.success(contentBodyService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentBody>> selectAll() {
+    public ResultVo<List<ContentBodyVo>> selectAll() {
         return ResultVo.success(contentBodyService.selectAll());
     }
 }
-

@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentAttachment;
 import com.fastproject.content.service.ContentAttachmentService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.attachment.ContentAttachmentCreate;
+import com.fastproject.content.vo.attachment.ContentAttachmentQuery;
+import com.fastproject.content.vo.attachment.ContentAttachmentUpdate;
+import com.fastproject.content.vo.attachment.ContentAttachmentVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentAttachmentController {
     @PreAuthorize("@ps.hasPermission('admin:content:attachment:add')")
     @Log(value = "添加附件", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:attachment:", expireTime = 120, title = "添加附件")
-    public ResultVo<Long> add(@RequestBody ContentAttachment contentAttachment) {
-        return ResultVo.success(contentAttachmentService.save(contentAttachment));
+    public ResultVo<Long> add(@RequestBody ContentAttachmentCreate create) {
+        return ResultVo.success(contentAttachmentService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:attachment:update')")
     @Log(value = "修改附件", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:attachment:", expireTime = 120, title = "修改附件")
-    public ResultVo<Object> update(@RequestBody ContentAttachment contentAttachment) {
-        contentAttachmentService.update(contentAttachment);
+    public ResultVo<Object> update(@RequestBody ContentAttachmentUpdate update) {
+        contentAttachmentService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentAttachmentController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:attachment:page')")
-    public ResultVo<PageVo<List<ContentAttachment>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentAttachmentVo>>> page(@RequestBody ContentAttachmentQuery query) {
         return ResultVo.success(contentAttachmentService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:attachment:page')")
-    public ResultVo<ContentAttachment> get(@PathVariable Long id) {
+    public ResultVo<ContentAttachmentVo> get(@PathVariable Long id) {
         return ResultVo.success(contentAttachmentService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:attachment:page')")
-    public ResultVo<List<ContentAttachment>> list() {
+    public ResultVo<List<ContentAttachmentVo>> list() {
         return ResultVo.success(contentAttachmentService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentAttachment>> selectAll() {
+    public ResultVo<List<ContentAttachmentVo>> selectAll() {
         return ResultVo.success(contentAttachmentService.selectAll());
     }
 }
-

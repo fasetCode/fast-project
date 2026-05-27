@@ -1,8 +1,10 @@
 package com.fastproject.module.content.controller;
 
-import com.fastproject.content.domain.ContentAuditLog;
 import com.fastproject.content.service.ContentAuditLogService;
-import com.fastproject.db.PageQuery;
+import com.fastproject.content.vo.auditlog.ContentAuditLogCreate;
+import com.fastproject.content.vo.auditlog.ContentAuditLogQuery;
+import com.fastproject.content.vo.auditlog.ContentAuditLogUpdate;
+import com.fastproject.content.vo.auditlog.ContentAuditLogVo;
 import com.fastproject.idempotent.annotation.Idempotent;
 import com.fastproject.logs.annotation.Log;
 import com.fastproject.logs.enums.LogAction;
@@ -26,16 +28,16 @@ public class ContentAuditLogController {
     @PreAuthorize("@ps.hasPermission('admin:content:auditLog:add')")
     @Log(value = "添加审核记录", type = LogType.BUSINESS, action = LogAction.CREATE)
     @Idempotent(prefix = "add:content:auditLog:", expireTime = 120, title = "添加审核记录")
-    public ResultVo<Long> add(@RequestBody ContentAuditLog contentAuditLog) {
-        return ResultVo.success(contentAuditLogService.save(contentAuditLog));
+    public ResultVo<Long> add(@RequestBody ContentAuditLogCreate create) {
+        return ResultVo.success(contentAuditLogService.save(create));
     }
 
     @PutMapping
     @PreAuthorize("@ps.hasPermission('admin:content:auditLog:update')")
     @Log(value = "修改审核记录", type = LogType.BUSINESS, action = LogAction.UPDATE)
     @Idempotent(prefix = "update:content:auditLog:", expireTime = 120, title = "修改审核记录")
-    public ResultVo<Object> update(@RequestBody ContentAuditLog contentAuditLog) {
-        contentAuditLogService.update(contentAuditLog);
+    public ResultVo<Object> update(@RequestBody ContentAuditLogUpdate update) {
+        contentAuditLogService.update(update);
         return ResultVo.success();
     }
 
@@ -57,25 +59,24 @@ public class ContentAuditLogController {
 
     @PostMapping("/page")
     @PreAuthorize("@ps.hasPermission('admin:content:auditLog:page')")
-    public ResultVo<PageVo<List<ContentAuditLog>>> page(@RequestBody PageQuery query) {
+    public ResultVo<PageVo<List<ContentAuditLogVo>>> page(@RequestBody ContentAuditLogQuery query) {
         return ResultVo.success(contentAuditLogService.findPage(query));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("@ps.hasPermission('admin:content:auditLog:page')")
-    public ResultVo<ContentAuditLog> get(@PathVariable Long id) {
+    public ResultVo<ContentAuditLogVo> get(@PathVariable Long id) {
         return ResultVo.success(contentAuditLogService.findById(id));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ps.hasPermission('admin:content:auditLog:page')")
-    public ResultVo<List<ContentAuditLog>> list() {
+    public ResultVo<List<ContentAuditLogVo>> list() {
         return ResultVo.success(contentAuditLogService.findAll());
     }
 
     @GetMapping("/selectAll")
-    public ResultVo<List<ContentAuditLog>> selectAll() {
+    public ResultVo<List<ContentAuditLogVo>> selectAll() {
         return ResultVo.success(contentAuditLogService.selectAll());
     }
 }
-
