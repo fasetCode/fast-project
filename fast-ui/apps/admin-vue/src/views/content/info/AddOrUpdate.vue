@@ -13,6 +13,7 @@ import { getDictData } from '@/utils/dict.ts'
 import ImageUpload from '@/components/ImageUpload/index.vue'
 import TipTapEditor from '@/components/TipTapEditor/index.vue'
 import TipTapViewer from '@/components/TipTapEditor/viewer.vue'
+import UserPicker from '@/components/UserPicker/index.vue'
 
 export interface AddOrUpdateRef {
   openForAdd: () => void
@@ -237,6 +238,15 @@ const handleCancel = () => {
   }, 300)
 }
 
+const handleAuthorSelect = (user: any) => {
+  if (!user) {
+    formData.authorName = ''
+    return
+  }
+  const name = user.nickname || user.username
+  if (name) formData.authorName = name
+}
+
 defineExpose<AddOrUpdateRef>({
   openForAdd,
   openForEdit,
@@ -269,7 +279,7 @@ onMounted(() => {
                   <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
                   <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
                   <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
-                  <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="作者ID" name="authorId"><UserPicker v-model:value="formData.authorId" @select="handleAuthorSelect" /></a-form-item></a-col>
                   <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
                   <a-col :span="24"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
                 </a-row>
