@@ -261,76 +261,79 @@ onMounted(() => {
     <a-form ref="formRef" :model="formData" layout="vertical" :rules="rules">
       <div class="content-info-editor-layout">
         <div class="content-info-editor-main">
-          <a-tabs v-model:activeKey="activeTab">
-            <a-tab-pane key="base" tab="基础信息">
-              <a-row :gutter="16">
-                <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
-                <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
-                <a-col :span="24"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
-              </a-row>
-            </a-tab-pane>
+          <div class="content-info-editor-panel">
+            <a-tabs v-model:activeKey="activeTab" class="content-info-tabs">
+              <a-tab-pane key="base" tab="基础信息">
+                <a-row :gutter="16">
+                  <a-col :span="24"><a-form-item label="标题" name="title"><a-input v-model:value="formData.title" placeholder="请输入标题" /></a-form-item></a-col>
+                  <a-col :span="24"><a-form-item label="摘要" name="summary"><a-textarea v-model:value="formData.summary" :rows="3" /></a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="封面" name="cover"><ImageUpload v-model="formData.cover" value-type="id" :limit="1" /></a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="作者名称" name="authorName"><a-input v-model:value="formData.authorName" /></a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="作者ID" name="authorId"><a-input-number v-model:value="formData.authorId" :min="0" style="width:100%" /></a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="来源" name="source"><a-input v-model:value="formData.source" /></a-form-item></a-col>
+                  <a-col :span="24"><a-form-item label="来源链接" name="sourceUrl"><a-input v-model:value="formData.sourceUrl" /></a-form-item></a-col>
+                </a-row>
+              </a-tab-pane>
 
-            <a-tab-pane key="meta" tab="分类与标签">
-              <a-row :gutter="16">
-                <a-col :span="12"><a-form-item label="分类" name="categoryIds">
-                  <a-tree-select
-                    v-model:value="selectedCategoryIds"
-                    :tree-data="categoryTreeData"
-                    :field-names="{ label: 'title', value: 'value', children: 'children' }"
-                    multiple
-                    allow-clear
-                    tree-default-expand-all
-                    style="width:100%"
-                    placeholder="请选择分类"
-                  />
-                </a-form-item></a-col>
-                <a-col :span="12"><a-form-item label="标签" name="tagIds">
-                  <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
-                    <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-                  </a-select>
-                </a-form-item></a-col>
-              </a-row>
-            </a-tab-pane>
+              <a-tab-pane key="meta" tab="分类与标签">
+                <a-row :gutter="16">
+                  <a-col :span="12"><a-form-item label="分类" name="categoryIds">
+                    <a-tree-select
+                      v-model:value="selectedCategoryIds"
+                      :tree-data="categoryTreeData"
+                      :field-names="{ label: 'title', value: 'value', children: 'children' }"
+                      multiple
+                      allow-clear
+                      tree-default-expand-all
+                      style="width:100%"
+                      placeholder="请选择分类"
+                    />
+                  </a-form-item></a-col>
+                  <a-col :span="12"><a-form-item label="标签" name="tagIds">
+                    <a-select v-model:value="selectedTagIds" mode="multiple" allow-clear placeholder="请选择标签">
+                      <a-select-option v-for="item in tagSelectOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                    </a-select>
+                  </a-form-item></a-col>
+                </a-row>
+              </a-tab-pane>
 
-            <a-tab-pane key="settings" tab="发布设置">
-              <a-row :gutter="16">
-                <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
-                <a-col :span="8"><a-form-item label="推荐" name="recommendFlag"><a-switch v-model:checked="formData.recommendFlag" /></a-form-item></a-col>
-                <a-col :span="8"><a-form-item label="允许评论" name="allowComment"><a-switch v-model:checked="formData.allowComment" /></a-form-item></a-col>
-                <a-col :span="8"><a-form-item label="状态" name="status">
-                  <a-select v-model:value="formData.status" allow-clear>
-                    <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-                  </a-select>
-                </a-form-item></a-col>
-                <a-col :span="8"><a-form-item label="发布状态" name="publishStatus">
-                  <a-select v-model:value="formData.publishStatus" allow-clear>
-                    <a-select-option v-for="item in publishStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-                  </a-select>
-                </a-form-item></a-col>
-                <a-col :span="8"><a-form-item label="审核状态" name="auditStatus">
-                  <a-select v-model:value="formData.auditStatus" allow-clear>
-                    <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
-                  </a-select>
-                </a-form-item></a-col>
-              </a-row>
-            </a-tab-pane>
+              <a-tab-pane key="settings" tab="发布设置">
+                <a-row :gutter="16">
+                  <a-col :span="8"><a-form-item label="置顶" name="topFlag"><a-switch v-model:checked="formData.topFlag" /></a-form-item></a-col>
+                  <a-col :span="8"><a-form-item label="推荐" name="recommendFlag"><a-switch v-model:checked="formData.recommendFlag" /></a-form-item></a-col>
+                  <a-col :span="8"><a-form-item label="允许评论" name="allowComment"><a-switch v-model:checked="formData.allowComment" /></a-form-item></a-col>
+                  <a-col :span="8"><a-form-item label="状态" name="status">
+                    <a-select v-model:value="formData.status" allow-clear>
+                      <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                    </a-select>
+                  </a-form-item></a-col>
+                  <a-col :span="8"><a-form-item label="发布状态" name="publishStatus">
+                    <a-select v-model:value="formData.publishStatus" allow-clear>
+                      <a-select-option v-for="item in publishStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                    </a-select>
+                  </a-form-item></a-col>
+                  <a-col :span="8"><a-form-item label="审核状态" name="auditStatus">
+                    <a-select v-model:value="formData.auditStatus" allow-clear>
+                      <a-select-option v-for="item in auditStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                    </a-select>
+                  </a-form-item></a-col>
+                </a-row>
+              </a-tab-pane>
 
-            <a-tab-pane key="content" tab="正文">
-              <a-row :gutter="16">
-                <a-col :span="24"><a-form-item label="正文" name="contentHtml">
-                  <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="460" />
-                </a-form-item></a-col>
-              </a-row>
-            </a-tab-pane>
-          </a-tabs>
+              <a-tab-pane key="content" tab="正文">
+                <a-row :gutter="16">
+                  <a-col :span="24"><a-form-item label="正文" name="contentHtml">
+                    <TipTapEditor v-model="formData.contentHtml" placeholder="请输入正文" :min-height="460" />
+                  </a-form-item></a-col>
+                </a-row>
+              </a-tab-pane>
+            </a-tabs>
+          </div>
         </div>
 
         <div class="content-info-editor-preview">
-          <div class="content-info-phone-preview">
+          <div class="content-info-preview-panel">
+            <div class="content-info-preview-title">手机预览</div>
             <div class="content-info-phone-shell">
               <div class="content-info-phone-notch"></div>
               <div class="content-info-phone-screen">
@@ -359,6 +362,16 @@ onMounted(() => {
   padding-bottom: 0;
 }
 
+.content-info-fullscreen-modal .ant-modal-header {
+  background: #ffffff;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.content-info-fullscreen-modal .ant-modal-footer {
+  background: #ffffff;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .content-info-fullscreen-modal .ant-modal-content {
   height: 100vh;
   display: flex;
@@ -371,10 +384,12 @@ onMounted(() => {
   flex: 1;
   overflow: auto;
   overflow-x: hidden;
+  padding: 12px 24px 24px;
+  background: #f6f8fc;
 }
 
 .content-info-fullscreen-modal .ant-modal-body .ant-tabs-nav {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .content-info-editor-layout {
@@ -386,6 +401,34 @@ onMounted(() => {
   padding-right: 396px;
 }
 
+.content-info-editor-panel {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  padding: 10px 14px 6px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.content-info-editor-panel .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.content-info-editor-panel .ant-form-item-label > label {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.content-info-tabs > .ant-tabs-nav::before {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.content-info-tabs > .ant-tabs-nav {
+  margin: 0 0 12px;
+}
+
+.content-info-tabs .ant-tabs-tab {
+  padding: 10px 14px;
+}
+
 .content-info-editor-preview {
   width: 380px;
   position: fixed;
@@ -394,20 +437,37 @@ onMounted(() => {
   z-index: 1001;
 }
 
+.content-info-preview-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 12px 12px 14px;
+  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.14);
+}
+
+.content-info-preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.72);
+  padding: 4px 4px 10px;
+}
+
 .content-info-phone-shell {
   width: 360px;
   height: calc(100vh - 168px);
   max-height: 780px;
-  background: #0b0f19;
-  border-radius: 36px;
+  background: radial-gradient(120% 120% at 20% 10%, #1f2a44 0%, #0b0f19 56%, #070a12 100%);
+  border-radius: 38px;
   padding: 14px;
-  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.18);
+  box-shadow:
+    0 18px 55px rgba(15, 23, 42, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .content-info-phone-notch {
   width: 120px;
   height: 18px;
-  background: #0b0f19;
+  background: rgba(0, 0, 0, 0.55);
   border-radius: 0 0 14px 14px;
   margin: 0 auto 10px;
 }
@@ -418,6 +478,7 @@ onMounted(() => {
   height: calc(100% - 28px);
   overflow: auto;
   padding: 14px 12px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
 @media (max-width: 1200px) {
