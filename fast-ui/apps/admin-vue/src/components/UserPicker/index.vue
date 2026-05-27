@@ -48,10 +48,44 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { getUserById, getUsersPage } from '@/api/system/sysusers'
-import type { SysUsersVo } from '@/api/system/sysusers'
+import request from '@/utils/axios'
 
 type ModelValue = number | number[] | null | undefined
+
+interface UserPickerVo {
+  id?: number
+  username: string
+  nickname: string
+  email?: string
+  phone?: string
+  avatar?: string
+}
+
+interface PageVo<T> {
+  data: T[]
+  total: number
+}
+
+interface ResultVo<T> {
+  code: number
+  data: T
+  msg: string
+}
+
+const getPickerPage = (data: { page: number; pageSize: number; keyword?: string }) => {
+  return request<ResultVo<PageVo<UserPickerVo>>>({
+    url: '/sys/users/picker/page',
+    method: 'POST',
+    data,
+  })
+}
+
+const getPickerById = (id: number) => {
+  return request<ResultVo<UserPickerVo>>({
+    url: `/sys/users/picker/${id}`,
+    method: 'GET',
+  })
+}
 
 const props = withDefaults(defineProps<{
   value: ModelValue
@@ -69,12 +103,12 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'update:value', value: ModelValue): void
   (e: 'change', value: ModelValue): void
-  (e: 'select', value: SysUsersVo | SysUsersVo[] | null): void
+  (e: 'select', value: UserPickerVo | UserPickerVo[] | null): void
 }>()
 
 const modalOpen = ref(false)
 const keyword = ref('')
-const userList = ref<SysUsersVo[]>([])
+const userList = ref<UserPickerVo[]>([])
 const total = ref(0)
 const loading = ref(false)
 
@@ -84,7 +118,7 @@ const query = reactive({
 })
 
 const selectedRowKeys = ref<(string | number)[]>([])
-const selectedStore = reactive<Record<string, SysUsersVo>>({})
+const selectedStore = reactive<Record<string, UserPickerVo>>({})
 
 const columns = [
   { title: '用户名', dataIndex: 'username', key: 'username', width: 180 },
@@ -111,7 +145,7 @@ const syncSelectedFromProps = async () => {
   const resList = await Promise.all(
     needFetch.slice(0, 20).map(async (id) => {
       try {
-        const res = await getUserById(id)
+        const res = await getPickerById(id)
         if (res.code === 200) return res.data
       } catch {
         return undefined
@@ -158,7 +192,7 @@ const pagination = computed(() => ({
 const rowSelection = computed(() => ({
   type: props.multiple ? 'checkbox' : 'radio',
   selectedRowKeys: selectedRowKeys.value,
-  onChange: (keys: (string | number)[], rows: SysUsersVo[]) => {
+  onChange: (keys: (string | number)[], rows: UserPickerVo[]) => {
     const nextKeys = props.multiple ? keys : keys.slice(0, 1)
     rows.forEach((row) => {
       if (row?.id !== undefined && row?.id !== null) {
@@ -183,11 +217,10 @@ const rowSelection = computed(() => ({
 const fetchPage = async () => {
   loading.value = true
   try {
-    const res = await getUsersPage({
+    const res = await getPickerPage({
       page: Math.max(0, query.page - 1),
       pageSize: query.pageSize,
-      username: keyword.value || undefined,
-      nickname: keyword.value || undefined,
+      keyword: keyword.value || undefined,
     })
     if (res.code === 200) {
       userList.value = res.data?.data || []

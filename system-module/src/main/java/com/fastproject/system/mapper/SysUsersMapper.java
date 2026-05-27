@@ -3,6 +3,7 @@ package com.fastproject.system.mapper;
 import com.fastproject.system.domain.SysUsers;
 import com.fastproject.system.vo.users.SysUserUpdate;
 import com.fastproject.system.vo.users.SysUsersCreate;
+import com.fastproject.system.vo.users.SysUsersPickerVo;
 import com.fastproject.vo.SysUsersLoginVo;
 import com.fastproject.system.vo.users.SysUsersVo;
 import org.mapstruct.Mapper;
@@ -25,6 +26,10 @@ public interface SysUsersMapper {
     List<SysUsersVo> toVo(List<SysUsers> content);
 
     SysUsersVo toVo(SysUsers entity);
+
+    List<SysUsersPickerVo> toPickerVo(List<SysUsers> content);
+
+    SysUsersPickerVo toPickerVo(SysUsers entity);
 
     SysUsersLoginVo toLoginUser(SysUsers byUsername);
 }

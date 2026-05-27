@@ -72,4 +72,14 @@ public interface SysUsersService {
      * 模糊搜索用户
      */
     List<SysUsersVo> searchUsers(String keyword, Integer limit);
+
+    /**
+     * 用户选择器分页（精简字段）
+     */
+    PageVo<List<SysUsersPickerVo>> findPickerPage(SysUsersPickerQuery query);
+
+    /**
+     * 用户选择器详情（精简字段）
+     */
+    SysUsersPickerVo getPickerById(Long id);
 }

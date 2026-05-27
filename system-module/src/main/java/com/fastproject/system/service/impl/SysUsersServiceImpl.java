@@ -388,4 +388,61 @@ public class SysUsersServiceImpl implements SysUsersService {
         Page<SysUsers> page = sysUsersRepository.findAll(spec, pageable);
         return sysUsersMapper.toVo(page.getContent());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageVo<List<SysUsersPickerVo>> findPickerPage(SysUsersPickerQuery query) {
+        Pageable pageable = PageRequest.of(query.getPage(), query.getPageSize(), Sort.by("id").descending());
+
+        Specification<SysUsers> spec = (root, q, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            tenantAccessSupport.applyTenantPredicate(predicates, root, cb);
+            if (StringUtils.hasText(query.getKeyword())) {
+                predicates.add(cb.or(
+                        cb.like(root.get("username"), "%" + query.getKeyword() + "%"),
+                        cb.like(root.get("nickname"), "%" + query.getKeyword() + "%")
+                ));
+            }
+            return predicates.isEmpty() ? null : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<SysUsers> page = sysUsersRepository.findAll(spec, pageable);
+        List<SysUsersPickerVo> list = sysUsersMapper.toPickerVo(page.getContent());
+        fillPickerAvatarUrl(list);
+        return PageVo.of(page.getTotalElements(), list);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SysUsersPickerVo getPickerById(Long id) {
+        SysUsers user = sysUsersRepository.findById(id).orElse(null);
+        if (user == null) {
+            return null;
+        }
+        tenantAccessSupport.checkEntityAccess(user, "无权查看当前租户用户");
+        SysUsersPickerVo vo = sysUsersMapper.toPickerVo(user);
+        if (vo == null) {
+            return null;
+        }
+        fillPickerAvatarUrl(List.of(vo));
+        return vo;
+    }
+
+    private void fillPickerAvatarUrl(List<SysUsersPickerVo> list) {
+        Set<String> avatarIds = list.stream()
+                .map(SysUsersPickerVo::getAvatar)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        if (avatarIds.isEmpty()) {
+            return;
+        }
+        Set<FileUrlVo> urlVos = fileHandle.getUrls(avatarIds);
+        Map<String, String> urlMap = urlVos.stream()
+                .collect(Collectors.toMap(FileUrlVo::getId, FileUrlVo::getUrl));
+        list.forEach(vo -> {
+            if (StringUtils.hasText(vo.getAvatar())) {
+                vo.setAvatar(urlMap.getOrDefault(vo.getAvatar(), vo.getAvatar()));
+            }
+        });
+    }
 }

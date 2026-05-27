@@ -9,6 +9,8 @@ import com.fastproject.system.vo.users.SysUserPasswordUpdate;
 import com.fastproject.system.vo.users.SysUserUpdate;
 import com.fastproject.system.vo.users.SysUsersCreate;
 import com.fastproject.system.vo.users.SysUsersDetailVo;
+import com.fastproject.system.vo.users.SysUsersPickerQuery;
+import com.fastproject.system.vo.users.SysUsersPickerVo;
 import com.fastproject.system.vo.users.SysUsersQuery;
 import com.fastproject.system.vo.users.SysUsersVo;
 import com.fastproject.utils.vo.PageVo;
@@ -107,5 +109,17 @@ public class SysUsersController {
     @GetMapping("/search")
     public ResultVo<List<SysUsersVo>> search(@RequestParam(required = false) String keyword) {
         return ResultVo.success(sysUsersService.searchUsers(keyword, 20));
+    }
+
+    @PostMapping("/picker/page")
+    @PreAuthorize("@ps.hasPermission('admin:system:user:page')")
+    public ResultVo<PageVo<List<SysUsersPickerVo>>> pickerPage(@RequestBody SysUsersPickerQuery query) {
+        return ResultVo.success(sysUsersService.findPickerPage(query));
+    }
+
+    @GetMapping("/picker/{id}")
+    @PreAuthorize("@ps.hasPermission('admin:system:user:page')")
+    public ResultVo<SysUsersPickerVo> pickerGet(@PathVariable Long id) {
+        return ResultVo.success(sysUsersService.getPickerById(id));
     }
 }
