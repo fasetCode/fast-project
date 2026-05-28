@@ -4,10 +4,15 @@
       :value="displayText"
       :placeholder="placeholder"
       readonly
-      allow-clear
-      @click="openModal"
-      @change="handleClear"
+      @click="handleInputClick"
     >
+      <template #suffix>
+        <CloseCircleFilled
+          v-if="displayText && !disabled"
+          class="clear-icon"
+          @click.stop="handleClear"
+        />
+      </template>
       <template #addonAfter>
         <a-button type="primary" @click="openModal" :disabled="disabled">选择</a-button>
       </template>
@@ -48,6 +53,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { CloseCircleFilled } from '@ant-design/icons-vue'
 import request from '@/utils/axios'
 
 type ModelValue = string | string[] | number | number[] | null | undefined
@@ -255,6 +261,10 @@ const openModal = () => {
   modalOpen.value = true
 }
 
+const handleInputClick = () => {
+  openModal()
+}
+
 const handleSearch = () => {
   query.page = 1
   fetchPage()
@@ -293,8 +303,7 @@ const handleCancel = () => {
   modalOpen.value = false
 }
 
-const handleClear = (e: any) => {
-  if (e?.target?.value) return
+const handleClear = () => {
   Object.keys(selectedStore).forEach((k) => delete selectedStore[k])
   selectedRowKeys.value = []
   emit('update:value', props.multiple ? [] : undefined)
@@ -306,5 +315,15 @@ const handleClear = (e: any) => {
 <style scoped>
 .toolbar {
   margin-bottom: 12px;
+}
+
+.clear-icon {
+  color: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.clear-icon:hover {
+  color: rgba(0, 0, 0, 0.45);
 }
 </style>

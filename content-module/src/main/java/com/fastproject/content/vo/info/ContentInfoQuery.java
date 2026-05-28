@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ContentInfoQuery extends PageQuery {
+    private String title;
     private Long authorId;
     private Long auditBy;
     private List<Long> categoryIds;

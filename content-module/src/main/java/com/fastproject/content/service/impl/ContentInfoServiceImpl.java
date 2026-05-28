@@ -29,6 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,6 +99,9 @@ public class ContentInfoServiceImpl implements ContentInfoService {
         Specification<ContentInfo> spec = (root, criteriaQuery, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (StringUtils.hasText(query.getTitle())) {
+                predicates.add(cb.like(root.get("title"), "%" + query.getTitle().trim() + "%"));
+            }
             if (query.getAuthorId() != null) {
                 predicates.add(cb.equal(root.get("authorId"), query.getAuthorId()));
             }

@@ -4,6 +4,15 @@
       <a-form :model="queryParams" class="elegant-form">
         <div class="filter-grid">
           <div class="filter-item">
+            <span class="filter-label">标题</span>
+            <a-input
+              v-model:value="queryParams.title"
+              class="elegant-input"
+              allow-clear
+              placeholder="请输入标题"
+            />
+          </div>
+          <div class="filter-item">
             <span class="filter-label">发布人</span>
             <UserPicker v-model:value="queryParams.authorId" placeholder="请选择发布人" />
           </div>
@@ -158,6 +167,7 @@ const resolveImage = (val: any) => {
 const queryParams = reactive<ContentInfoQuery>({
   page: 1,
   pageSize: 10,
+  title: '',
   authorId: undefined,
   auditBy: undefined,
   categoryIds: [],
@@ -303,6 +313,7 @@ const handleTableChange = (pag: any) => {
 
 const reset = () => {
   pagination.current = 1
+  queryParams.title = ''
   queryParams.authorId = undefined
   queryParams.auditBy = undefined
   queryParams.categoryIds = []

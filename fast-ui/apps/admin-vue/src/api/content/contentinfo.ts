@@ -35,6 +35,7 @@ export interface ContentInfoVo {
 export interface ContentInfoQuery {
   page: number
   pageSize: number
+  title?: string
   authorId?: number | string
   auditBy?: number | string
   categoryIds?: Array<number | string>
