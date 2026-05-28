@@ -78,35 +78,83 @@
           :row-selection="{ selectedRowKeys, onChange: onSelectChange }"
           row-key="id"
           size="middle"
-          :scroll="{ x: 1700 }"
+          :scroll="{ x: 1280 }"
           @change="handleTableChange"
           class="elegant-table"
         >
-           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'cover'">
-              <a-image v-if="record.cover" :src="resolveImage(record.cover)" :width="44" :height="44" />
-              <span v-else class="text-secondary">-</span>
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'title'">
+              <div class="content-cell">
+                <div class="content-cover">
+                  <a-image
+                    v-if="record.cover"
+                    :src="resolveImage(record.cover)"
+                    :width="56"
+                    :height="56"
+                    class="cover-image"
+                  />
+                  <div v-else class="cover-placeholder">无封面</div>
+                </div>
+                <div class="content-main">
+                  <div class="title-main">{{ record.title || '-' }}</div>
+                  <div class="content-meta">
+                    <span>作者：{{ record.authorName || '-' }}</span>
+                    <span>ID：{{ record.id || '-' }}</span>
+                  </div>
+                </div>
+              </div>
             </template>
-            <template v-else-if="column.key === 'categoryIds'">
-              <template v-if="getCategoryNames(record.categoryIds).length">
-                <a-tag v-for="name in getCategoryNames(record.categoryIds)" :key="name">{{ name }}</a-tag>
-              </template>
-              <span v-else class="text-secondary">-</span>
+            <template v-else-if="column.key === 'taxonomy'">
+              <div class="info-stack">
+                <div class="info-block">
+                  <span class="info-label">分类</span>
+                  <div v-if="getCategoryNames(record.categoryIds).length" class="tag-group">
+                    <a-tag v-for="name in getCategoryNames(record.categoryIds)" :key="name" class="info-tag">
+                      {{ name }}
+                    </a-tag>
+                  </div>
+                  <span v-else class="text-secondary">-</span>
+                </div>
+                <div class="info-block">
+                  <span class="info-label">标签</span>
+                  <div v-if="getTagNames(record.tagIds).length" class="tag-group">
+                    <a-tag v-for="t in getTagNames(record.tagIds)" :key="t" class="info-tag info-tag--light">
+                      {{ t }}
+                    </a-tag>
+                  </div>
+                  <span v-else class="text-secondary">-</span>
+                </div>
+              </div>
             </template>
-            <template v-else-if="column.key === 'tagIds'">
-              <template v-if="getTagNames(record.tagIds).length">
-                <a-tag v-for="t in getTagNames(record.tagIds)" :key="t">{{ t }}</a-tag>
-              </template>
-              <span v-else class="text-secondary">-</span>
+            <template v-else-if="column.key === 'workflow'">
+              <div class="status-stack">
+                <div class="status-line">
+                  <span class="info-label">状态</span>
+                  <a-tag :color="record.status === 1 ? 'green' : 'red'" class="status-tag">
+                    {{ getDictLabel('status', record.status) }}
+                  </a-tag>
+                </div>
+                <div class="status-line">
+                  <span class="info-label">发布</span>
+                  <a-tag color="blue" class="status-tag">{{ getDictLabel('content_publish_status', record.publishStatus) }}</a-tag>
+                </div>
+                <div class="status-line">
+                  <span class="info-label">审核</span>
+                  <a-tag color="purple" class="status-tag">{{ getDictLabel('content_audit_status', record.auditStatus) }}</a-tag>
+                </div>
+              </div>
             </template>
-            <template v-else-if="column.key === 'status'">
-              <a-tag :color="record.status === 1 ? 'green' : 'red'">{{ getDictLabel('status', record.status) }}</a-tag>
-            </template>
-            <template v-else-if="column.key === 'publishStatus'">
-              <a-tag color="blue">{{ getDictLabel('content_publish_status', record.publishStatus) }}</a-tag>
-            </template>
-            <template v-else-if="column.key === 'auditStatus'">
-              <a-tag color="purple">{{ getDictLabel('content_audit_status', record.auditStatus) }}</a-tag>
+            <template v-else-if="column.key === 'metrics'">
+              <div class="metrics-stack">
+                <div class="metric-card">
+                  <span class="metric-value">{{ record.viewCount ?? 0 }}</span>
+                  <span class="metric-label">浏览</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-value">{{ record.commentCount ?? 0 }}</span>
+                  <span class="metric-label">评论</span>
+                </div>
+              </div>
             </template>
             <template v-else-if="column.key === 'action'">
               <a-button type="link" size="small" @click="handleEdit(record)"><EditOutlined /> 编辑</a-button>
@@ -139,16 +187,10 @@ import UserPicker from '@/components/UserPicker/index.vue'
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
-  { title: '标题', dataIndex: 'title', key: 'title', width: 260 },
-  { title: '封面', dataIndex: 'cover', key: 'cover', width: 80 },
-  { title: '作者', dataIndex: 'authorName', key: 'authorName', width: 140 },
-  { title: '分类', dataIndex: 'categoryIds', key: 'categoryIds', width: 220 },
-  { title: '标签', dataIndex: 'tagIds', key: 'tagIds', width: 220 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '发布状态', dataIndex: 'publishStatus', key: 'publishStatus', width: 120 },
-  { title: '审核状态', dataIndex: 'auditStatus', key: 'auditStatus', width: 120 },
-  { title: '浏览数', dataIndex: 'viewCount', key: 'viewCount', width: 100 },
-  { title: '评论数', dataIndex: 'commentCount', key: 'commentCount', width: 100 },
+  { title: '内容信息', dataIndex: 'title', key: 'title', width: 380 },
+  { title: '分类与标签', key: 'taxonomy', width: 300 },
+  { title: '状态信息', key: 'workflow', width: 220 },
+  { title: '数据概览', key: 'metrics', width: 160, align: 'center' as const },
   { title: '操作', key: 'action', width: 160, fixed: 'right' as const, align: 'center' as const },
 ]
 
@@ -375,4 +417,153 @@ onMounted(() => {
 
 <style scoped>
 @import '@/assets/styles/modern-dashboard.css';
+
+.content-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.content-cover {
+  flex: 0 0 auto;
+}
+
+.content-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.title-main {
+  color: #1f2937;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.content-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.cover-image :deep(img) {
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+}
+
+.cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-label {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.info-tag {
+  margin-inline-end: 0;
+  padding-inline: 10px;
+  border-radius: 999px;
+}
+
+.info-tag--light {
+  background: #f8fafc;
+  border-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-tag {
+  margin-inline-end: 0;
+  padding-inline: 10px;
+  border-radius: 999px;
+}
+
+.metrics-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-value {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metric-label {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.action-btn {
+  padding-inline: 6px;
+}
 </style>
