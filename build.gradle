@@ -210,6 +210,7 @@ project(":content-module"){
         implementation project(":utils")
         implementation project(":file-api")
         implementation project(":content-api")
+
     }
 }
 // 内容模块 用于 知识库 论坛 等公共模块
@@ -457,6 +458,11 @@ project(':system-module'){
         implementation project(":file-api")
 
     }
+}
+
+project(":system-api"){
+    group = 'com.fastproject'
+    version = '0.0.1'
 }
 
 // 日志模块
