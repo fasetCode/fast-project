@@ -4,9 +4,14 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7' apply false
     id 'org.graalvm.buildtools.native' version '0.11.5' apply false
 }
+
+ext {
+    projectVersion = '0.0.1'
+}
+
 allprojects {
     group = 'com.fastproject'
-    version = '0.0.1'
+    version = projectVersion
     repositories {
         mavenCentral()
     }
@@ -60,7 +65,6 @@ libraryModules.each { moduleName ->
 // 公共模块
 project(':common'){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -80,7 +84,6 @@ project(':common'){
 // 工具
 project(':utils'){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.bouncycastle:bcprov-jdk18on:1.78'
 
@@ -91,7 +94,6 @@ project(':utils'){
 // 后台api
 project(':run-admin'){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.postgresql:postgresql:42.7.10'
         implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -144,7 +146,6 @@ project(':run-admin'){
 
 project(":run-web"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.postgresql:postgresql:42.7.10'
         implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -190,7 +191,6 @@ project(":run-web"){
 // 内容模块 用于 知识库 论坛 等公共模块
 project(":content-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -216,13 +216,11 @@ project(":content-module"){
 // 内容模块 用于 知识库 论坛 等公共模块
 project(":content-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
 }
 
 // 商城
 project(":mall-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -246,12 +244,10 @@ project(":mall-module"){
 }
 project(":mall-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
 }
 
 project(":page-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -280,7 +276,6 @@ project(":page-api"){
 // 幕等模块
 project(":idempotent-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -305,7 +300,6 @@ project(":idempotent-module"){
 //
 project(":idempotent-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation project(':common')
         implementation("org.springframework:spring-aop")
@@ -318,7 +312,6 @@ project(":idempotent-api"){
 // 限流模块
 project(":ratelimit-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -347,7 +340,6 @@ project(":ratelimit-module"){
 // 限流api
 project(":ratelimit-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation project(':common')
         implementation("org.springframework:spring-aop")
@@ -360,7 +352,6 @@ project(":ratelimit-api"){
 // 消息
 project(":message-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -389,7 +380,6 @@ project(":message-module"){
 }
 project(":message-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
 
     }
@@ -398,7 +388,6 @@ project(":message-api"){
 // 积分权益模块
 project(":user-growth-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -419,7 +408,6 @@ project(":user-growth-module"){
 }
 project(":user-growth-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
 
     }
@@ -431,7 +419,6 @@ project(":user-growth-api"){
 //服务器工作节点
 project(":server-work"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'com.github.oshi:oshi-core:6.10.0'
         implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -444,7 +431,6 @@ project(":server-work"){
 // 系统模块
 project(':system-module'){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -462,13 +448,11 @@ project(':system-module'){
 
 project(":system-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
 }
 
 // 日志模块
 project(":logs-module"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -488,7 +472,6 @@ project(":logs-module"){
 // 日志api
 project(":logs-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
 
         implementation project(':common')
@@ -504,7 +487,6 @@ project(":logs-api"){
 project(":file-module"){
 
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.mapstruct:mapstruct:1.6.3'
@@ -525,7 +507,6 @@ project(":file-module"){
 // 文件api
 project(":file-api"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
 
     }
@@ -535,7 +516,6 @@ project(":file-api"){
 project(":websocket"){
 
     group = 'com.fastproject'
-    version = '0.0.1'
 
     dependencies {
         implementation 'io.netty:netty-all:4.2.12.Final'
@@ -556,7 +536,6 @@ project(":websocket"){
 // 客户端插件
 project(":run-customer-plugin"){
     group = 'com.fastproject'
-    version = '0.0.1'
     dependencies {
         implementation 'org.postgresql:postgresql:42.7.10'
         implementation 'org.springframework.boot:spring-boot-starter-web'
